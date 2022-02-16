@@ -1,0 +1,64 @@
+<section class="login">
+<div class="container d-flex align-items-center justify-content-center " style="box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;">
+<form class="m-5" id="userform" method="POST" action="/u-signup">
+
+  {{#if errorMessage }}
+                                    <div class="col-12 col-md-12 col-sm-12 col-lg-12">
+                                        <div class="alert alert-danger">
+                                            {{ errorMessage }}
+                                        </div>
+                                    </div>
+                                {{/if }}
+
+  <div class="avc" >
+    <label for="exampleInputEmail1" class="form-label fs-5 font-weight-bold text-success">Your Name</label>
+    <input type="text" name="user_name" class="form-control" id="user_name" aria-describedby="emailHelp">
+  </div>
+
+  <div class="mb-3">
+    <label for="exampleInputPassword1" class="form-label fs-5 font-weight-bold text-success">Your Email</label>
+    <input type="email" name="user_email" class="form-control" id="user_email">
+    <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
+  </div>
+
+  <div class="mb-3">
+    <label for="exampleInputPassword1" class="form-label fs-5 font-weight-bold text-success">Your State</label>
+    <input type="text" name="user_state" class="form-control" id="user_state">
+  </div>
+
+  <div class="mb-3">
+    <label for="exampleInputEmail1" class="form-label fs-5 font-weight-bold text-success">Your Mobile Number</label>
+    <input type="number" name="user_number" class="form-control" id="user_number" aria-describedby="emailHelp">
+    <div id="emailHelp" class="form-text">OTP will send to above number for Signup (don't use country code)</div>
+  </div>
+
+  <div class="mb-3">
+    <label for="exampleInputPassword1" class="form-label fs-5 font-weight-bold text-success">Your Password</label>
+    <input type="password" name="user_password" class="form-control" id="exampleInputPassword">
+  </div>
+
+  <div class="mb-3">
+    <label for="exampleInputPassword1" class="form-label fs-5 font-weight-bold text-success">Your Confirm Password</label>
+    <input type="password" name="user_confirmpassword" class="form-control" id="exampleInputConfirmPassword">
+    <div id="emailHelp" class="form-text">Confirm Password Need To Same Of Above Password.</div>    
+  </div>
+
+  {{!-- <div class="mb-3 form-check">
+    <input type="checkbox" class="form-check-input" id="exampleCheck1">
+    <label class="form-check-label" for="exampleCheck1">Check me out</label>
+  </div> --}}
+
+  <button type="submit" onclick="return validateForm()" class="btn btn-success">Signup</button>
+  <div class="text" style="padding-top: 15px;"> <a style="font-style:italic; color: red;" href="/u-login"> Already Signup ?</a> </div>
+  </form>
+
+{{!-- <h3 class="text-justify text-center">OR </h3>
+
+<form class="m-5" id="otpform" method="POST" action="/u-signup">
+
+
+  <button type="submit" onclick="return validateOtpForm()" class="btn btn-success">Signup</button>
+  <div class="text" style="padding-top: 15px;"> <a style="font-style:italic; color: red;" href="/u-login"> Already Signup ?</a> </div>
+</form> --}}
+</div>
+</section>
