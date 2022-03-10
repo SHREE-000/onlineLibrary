@@ -51,11 +51,11 @@
 	<link href="https://unpkg.com/cropperjs/dist/cropper.css" rel="stylesheet" />
 
 
+	{{!-- Newly Added Files --}}
 
+    <script src="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap.min.css"></script>
 
-
-
-
+	
 
 
 
@@ -68,10 +68,14 @@
 	{{>user-header}}
 	{{{body}}}
 	{{>user-footer}}
-	{{else}}
+	{{/if}}
+	{{#if admin_partial}}
 	{{>admin-header}}
 	{{{body}}}
 	{{>admin-footer}}
+	{{/if}}
+	{{#if errorPartial}}
+	{{{body}}}
 	{{/if}}
 
 
@@ -98,6 +102,12 @@
 
 		<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 		<script src="https://www.paypalobjects.com/api/checkout.js"></script>
+
+		<script src="https://cdn.jsdelivr.net/gh/linways/table-to-excel@v1.0.4/dist/tableToExcel.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+    integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 
 
 {{!-- issued file --}}

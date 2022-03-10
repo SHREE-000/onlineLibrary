@@ -4,6 +4,7 @@ module.exports = {
     ADMIN_CATEGORY_COLLECTION : "book_category" ,
     ADMIN_SUB_CATEGORY_COLLECTION : "book_sub_category"  ,
     ADMIN_BOOK_COLLECTION : "books" ,
+    WISHLIST_COLLECTION : "wishlist" ,
     CART_COLLECTION : "cart" ,
     ADD_DELIVERY_RATE : "shipping_rate",
     FIRST_BANNER_DATA : "first_banner" ,
@@ -16,5 +17,9 @@ module.exports = {
     ORDER_COLLECTION : "order" ,
     ADMIN_DP_COLLECTION : "admin_dp",
     SUBSCRIPTION_PLANS : "plans" ,
-    SUBSCRIPTION_PAID_COLLECTION : "paid_plan"
+    SUBSCRIPTION_PAID_COLLECTION : "paid_plan" ,
+    COUPON_COLLECTION : "coupon" ,
+    RETURN_BOOK : "return" ,
+    FINE_AMOUNT_USERS : "fineUsers" ,
+    TOTAL_SUBSCRIPTION_PAID_COLLECTION : "total_paid_plan"
 }

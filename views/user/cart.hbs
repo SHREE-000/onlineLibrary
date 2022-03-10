@@ -1,3 +1,62 @@
+<style>
+#snackbar {
+  visibility: hidden;
+  min-width: 250px;
+  margin-left: -125px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 2px;
+  padding: 16px;
+  position: fixed;
+  z-index: 1;
+  left: 50%;
+  bottom: 30px;
+  font-size: 17px;
+}
+
+#snackbar.show {
+  visibility: visible;
+  -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@-webkit-keyframes fadein {
+  from {bottom: 0; opacity: 0;} 
+  to {bottom: 30px; opacity: 1;}
+}
+
+@keyframes fadein {
+  from {bottom: 0; opacity: 0;}
+  to {bottom: 30px; opacity: 1;}
+}
+
+@-webkit-keyframes fadeout {
+  from {bottom: 30px; opacity: 1;} 
+  to {bottom: 0; opacity: 0;}
+}
+
+@keyframes fadeout {
+  from {bottom: 30px; opacity: 1;}
+  to {bottom: 0; opacity: 0;}
+}
+</style>
+
+			{{#if errorMessage }}
+			<div class="col-12 col-md-12 col-sm-12 col-lg-12">
+				<div class="alert alert-danger">
+					{{ errorMessage }}
+				</div>
+			</div>
+			{{/if }}
+
+			{{#if successMessage }}
+			<div class="col-12 col-md-12 col-sm-12 col-lg-12">
+				<div class="alert alert-success">
+					{{ successMessage }}
+				</div>
+			</div>
+			{{/if }}
 
 		<section class="breadcrumb-section">
 			<h2 class="sr-only">Site Breadcrumb</h2>
@@ -44,9 +103,9 @@
 												
 												<td class="pro-remove"><a id="dleteCart" onclick="deleteCart(event,'{{this._id}}' , '{{this.book_name}}')" ><i class="far fa-trash-alt"></i></a>
 												</td>
-												<td class="pro-thumbnail"><a href="#"><img
+												<td class="pro-thumbnail"><a href="/product-details/{{this._id}}"><img
 															src="/book-images/{{this._id}}1.jpeg" alt="Product"></a></td>
-												<td class="pro-title"><a href="#">{{this.book_name}}</a></td>
+												<td class="pro-title"><a href="/product-details/{{this._id}}">{{this.book_name}}</a></td>
 												<td class="pro-price"><span>{{this.book_author}}</span></td>
 
 												{{#if this.book_checkPremium}}
@@ -65,15 +124,15 @@
 											<tr>
 												<td colspan="6" class="actions">
 													<div class="coupon-block">
-														<div class="coupon-text">
+														{{!-- <div class="coupon-text">
 															<label for="coupon_code">Coupon:</label>
 															<input type="text" name="coupon_code" class="input-text"
 																id="coupon_code" value="" placeholder="Coupon code">
-														</div>
-														<div class="coupon-btn">
+														</div> --}}
+														{{!-- <div class="coupon-btn">
 															<input type="submit" class="btn btn-outlined"
 																name="apply_coupon" value="Apply coupon">
-														</div>
+														</div> --}}
 													</div>
 													<div class="update-block text-right">
 														<input type="submit" class="btn btn-outlined" name="update_cart"
@@ -82,6 +141,8 @@
 															value="05741b501f"><input type="hidden"
 															name="_wp_http_referer" value="/petmark/cart/">
 													</div>
+
+													
 												</td>
 											</tr>
 										</tbody>
@@ -95,7 +156,7 @@
 			<div class="cart-section-2">
 				<div class="container">
 					<div class="row">
-						<div class="col-lg-6 col-12 mb--30 mb-lg--0">
+						{{!-- <div class="col-lg-6 col-12 mb--30 mb-lg--0">
 							<!-- slide Block 5 / Normal Slider -->
 							<div class="cart-block-title">
 								<h2>YOU MAY BE INTERESTED IN…</h2>
@@ -128,10 +189,10 @@
 														<img sroneBook" alt="">
 													</a>
 													<div class="hover-btns">
-														<a href="cart.html" class="single-btn">
+														<a href="/cart" class="single-btn">
 															<i class="fas fa-shopping-basket"></i>
 														</a>
-														<a href="wishlist.html" class="single-btn">
+														<a href="/wishlist" class="single-btn">
 															<i class="fas fa-heart"></i>
 														</a>
 														<a href="compare.html" class="single-btn">
@@ -168,10 +229,10 @@
 														<img sroneBook" alt="">
 													</a>
 													<div class="hover-btns">
-														<a href="cart.html" class="single-btn">
+														<a href="/cart" class="single-btn">
 															<i class="fas fa-shopping-basket"></i>
 														</a>
-														<a href="wishlist.html" class="single-btn">
+														<a href="/wishlist" class="single-btn">
 															<i class="fas fa-heart"></i>
 														</a>
 														<a href="compare.html" class="single-btn">
@@ -208,10 +269,10 @@
 														<img src="image/products/product-2.jpg" alt="">
 													</a>
 													<div class="hover-btns">
-														<a href="cart.html" class="single-btn">
+														<a href="/cart" class="single-btn">
 															<i class="fas fa-shopping-basket"></i>
 														</a>
-														<a href="wishlist.html" class="single-btn">
+														<a href="/wishlist" class="single-btn">
 															<i class="fas fa-heart"></i>
 														</a>
 														<a href="compare.html" class="single-btn">
@@ -249,10 +310,10 @@
 														<img src="image/products/product-4.jpg" alt="">
 													</a>
 													<div class="hover-btns">
-														<a href="cart.html" class="single-btn">
+														<a href="/cart" class="single-btn">
 															<i class="fas fa-shopping-basket"></i>
 														</a>
-														<a href="wishlist.html" class="single-btn">
+														<a href="/wishlist" class="single-btn">
 															<i class="fas fa-heart"></i>
 														</a>
 														<a href="compare.html" class="single-btn">
@@ -289,10 +350,10 @@
 														<img src="image/products/product-4.jpg" alt="">
 													</a>
 													<div class="hover-btns">
-														<a href="cart.html" class="single-btn">
+														<a href="/cart" class="single-btn">
 															<i class="fas fa-shopping-basket"></i>
 														</a>
-														<a href="wishlist.html" class="single-btn">
+														<a href="/wishlist" class="single-btn">
 															<i class="fas fa-heart"></i>
 														</a>
 														<a href="compare.html" class="single-btn">
@@ -314,9 +375,9 @@
 									</div>
 								</div>
 							</div>
-						</div>
+						</div> --}}
 						<!-- Cart Summary -->
-						<div class="col-lg-6 col-12 d-flex">
+						<div class="col-lg-12 col-12 d-flex">
 							<div class="cart-summary">
 								<div class="cart-summary-wrap">
 									<h4><span>Cart Summary</span></h4>
@@ -325,8 +386,10 @@
 									<h2>Grand Total <span class="text-primary">₹{{totalRate}}</span></h2>
 								</div>
 								<div class="cart-summary-button">
-									<a href="/checkout" class="checkout-btn c-btn btn--primary">Checkout</a>
-									<button class="update-btn c-btn btn-outlined">Update Cart</button>
+									<button onclick="rentExceed()" class="checkout-btn c-btn btn--primary">Checkout</button>
+									<a href="/cart" class="update-btn c-btn btn-outlined">Update Cart</a>
+									<div id="snackbar">As Per The Plan Maximum Count Of Rent Books Are Exceeded</div>
+
 								</div>
 							</div>
 						</div>

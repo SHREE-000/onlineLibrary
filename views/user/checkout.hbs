@@ -1,3 +1,49 @@
+
+<style>
+#snackbar {
+  visibility: hidden;
+  min-width: 250px;
+  margin-left: -125px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 2px;
+  padding: 16px;
+  position: fixed;
+  z-index: 1;
+  left: 50%;
+  bottom: 30px;
+  font-size: 17px;
+}
+
+#snackbar.show {
+  visibility: visible;
+  -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@-webkit-keyframes fadein {
+  from {bottom: 0; opacity: 0;} 
+  to {bottom: 30px; opacity: 1;}
+}
+
+@keyframes fadein {
+  from {bottom: 0; opacity: 0;}
+  to {bottom: 30px; opacity: 1;}
+}
+
+@-webkit-keyframes fadeout {
+  from {bottom: 30px; opacity: 1;} 
+  to {bottom: 0; opacity: 0;}
+}
+
+@keyframes fadeout {
+  from {bottom: 30px; opacity: 1;}
+  to {bottom: 0; opacity: 0;}
+}
+</style>
+
+
 {{#if address}}
 
 <section class="breadcrumb-section">
@@ -13,6 +59,180 @@
 		</div>
 	</div>
 </section>
+
+
+
+<main id="content" class="page-section inner-page-sec-padding-bottom space-db--20 mt-5">
+	<div class="container">
+		<div class="row">
+			<div class="col-12">
+				<!-- Checkout Form s-->
+				<div class="checkout-form text-center">
+					<div class="row ">
+						<div class="col-12">
+							
+							<!-- Slide Down Trigger  -->
+							{{!-- <div class="checkout-quick-box">
+								<p><i class="far fa-sticky-note"></i>Returning customer? <a href="javascript:"
+										class="slide-trigger" data-target="#quick-login">Click
+										here to login</a></p>
+							</div>
+							<!-- Slide Down Blox ==> Login Box  -->
+							<div class="checkout-slidedown-box" id="quick-login">
+								<form action="https://template.hasthemes.com/pustok/pustok/">
+									<div class="quick-login-form">
+										<p>If you have shopped with us before, please enter your details in the
+											boxes below. If you are a new
+											customer
+											please
+											proceed to the Billing & Shipping section.</p>
+										<div class="form-group">
+											<label for="quick-user">Username or email *</label>
+											<input type="text" placeholder="" id="quick-user">
+										</div>
+										<div class="form-group">
+											<label for="quick-pass">Password *</label>
+											<input type="text" placeholder="" id="quick-pass">
+										</div>
+										<div class="form-group">
+											<div class="d-flex align-items-center flex-wrap">
+												<a href="#" class="btn btn-outlined me-3">Login</a>
+												<div class="d-inline-flex align-items-center">
+													<input type="checkbox" id="accept_terms" class="mb-0 mx-1">
+													<label for="accept_terms" class="mb-0">I’ve read and accept
+														the terms &amp; conditions</label>
+												</div>
+											</div>
+											<p><a href="javascript:" class="pass-lost mt-3">Lost your
+													password?</a></p>
+										</div>
+									</div>
+								</form>
+							</div> --}}
+
+						</div>
+						<form action="/add-profile-checkout" method="post" onsubmit="return validationaddressplace()"
+							method="POST" enctype="multipart/form-data" id="add-prod">
+							<div class="col-lg-12 mb--20">
+								<!-- Billing Address -->
+								<div id="billing-form" class="mb-40">
+									<h4 class="checkout-title">Add Rental Address</h4>
+									<div class="row">
+										<div class="col-md-6 col-12 mb--20">
+											<label>Name*</label>
+											<input name="user_name" type="text" placeholder="First Name">
+										</div>
+
+										<div class="col-md-6 col-12 mb--20">
+											<label>Phone no*</label>
+											<input name="user_number" type="text" placeholder="Phone number">
+										</div>
+
+
+										<div class="col-md-6 col-12 mb--20">
+											<label for="inputDistrict">State</label>
+											<select id="inputState" name="State" style="width: 270px; height: 50px;"
+												class="form-control select">
+
+												<option value="">-- select one -- </option>
+												<option value="Arunachal Pradesh">Arunachal Pradesh</option>
+												<option value="Assam">Assam</option>
+												<option value="Bihar">Bihar</option>
+												<option value="Chhattisgarh">Chhattisgarh</option>
+												<option value="Goa">Goa</option>
+												<option value="Gujarat">Gujarat</option>
+												<option value="Haryana">Haryana</option>
+												<option value="Himachal Pradesh">Himachal Pradesh</option>
+												<option value="Jammu and Kashmir">Jammu and Kashmir</option>
+												<option value="Jharkhand">Jharkhand</option>
+												<option value="Karnataka">Karnataka</option>
+												<option value="Kerala">Kerala</option>
+												<option value="Madya Pradesh">Madya Pradesh</option>
+												<option value="Maharashtra">Maharashtra</option>
+												<option value="Manipur">Manipur</option>
+												<option value="Meghalaya">Meghalaya</option>
+												<option value="Mizoram">Mizoram</option>
+												<option value="Nagaland">Nagaland</option>
+												<option value="Orissa">Orissa</option>
+												<option value="Punjab">Punjab</option>
+												<option value="Rajasthan">Rajasthan</option>
+												<option value="Sikkim">Sikkim</option>
+												<option value="Tamil Nadu">Tamil Nadu</option>
+												<option value="Telangana">Telangana</option>
+												<option value="Tripura">Tripura</option>
+												<option value="Uttaranchal">Uttaranchal</option>
+												<option value="Uttar Pradesh">Uttar Pradesh</option>
+												<option value="West Bengal">West Bengal</option>
+												<option value="Andra Pradesh">Andra Pradesh</option>
+												<option disabled style="background-color:#aaa; color:#fff">
+													UNION
+													Territories</option>
+												<option value="Andaman and Nicobar Islands">Andaman and
+													Nicobar
+													Islands</option>
+												<option value="Chandigarh">Chandigarh</option>
+												<option value="Dadar and Nagar Haveli">Dadar and Nagar
+													Haveli
+												</option>
+												<option value="Daman and Diu">Daman and Diu</option>
+												<option value="Delhi">Delhi</option>
+												<option value="Lakshadeep">Lakshadeep</option>
+												<option value="Pondicherry">Pondicherry</option>
+
+
+
+											</select>
+											<small class="text-danger" id="State"></small>
+										</div>
+										<div class="col-md-6 col-12 mb--20">
+											<label for="inputDistrict">District</label>
+											<select id="inputDistrict" name="City" style="width: 270px; height: 50px;"
+												class="select form-control">
+												<option value="">-- select one -- </option>
+											</select>
+											<small class="text-danger" id="City"></small>
+										</div>
+
+										
+
+										<div class="col-md-6 col-12 mb--20">
+											<label>Email Address*</label>
+											<input name="user_email" type="email" placeholder="Email Address">
+										</div>
+
+
+
+										<div class="col-md-6 col-12 mb--20">
+											<label>Address*</label>
+											<input name="user_address" type="text" placeholder="Address">
+										</div>
+										<div class="col-md-6 col-12 mb--20">
+											<label>Town/City*</label>
+											<input name="user_town" type="text" placeholder="Town/City">
+										</div>
+										<div class="col-md-6 col-12 mb--20">
+											<label>Zip Code*</label>
+											<input name="user_zip_code" type="text" placeholder="Zip Code">
+										</div>
+
+
+
+									</div>
+								</div>
+							</div>
+							<button id="confirm-btn1" type="submit" class="btn btn-success"> Add</button>
+						
+
+					</div>
+
+				</div>
+			</div>
+		</div>
+</main>
+
+
+
+
 <main id="content" class="page-section inner-page-sec-padding-bottom space-db--20">
 	<div class="container">
 		<div class="row">
@@ -21,19 +241,34 @@
 				<div class="checkout-form">
 					<div class="row row-40">
 						<div class="col-12">
-							<h1 class="quick-title">Checkout</h1>
+							<h1 class="quick-title text-center">CHECKOUT</h1>
 							<!-- Slide Down Trigger  -->
 
 
-							<div class="checkout-quick-box">
-								<p><i class="far fa-sticky-note"></i>Have a coupon? <a href="javascript:"
+							{{!-- <div class="checkout-quick-box">
+								<p><i class="far fa-sticky-note"></i>Have a coupon? <a href="/coupon-view"
 										class="slide-trigger" data-target="#quick-cupon">
 										Click here to enter your code</a></p>
-							</div>
+							</div> --}}
 
 						</div>
 
+
+
+
+
+
+
 						<form id="checkOut-form">
+
+
+
+
+
+
+
+
+
 
 
 							<!-- Billing Address -->
@@ -47,7 +282,7 @@
 
 			{{#if errorMessage }}
 			<div class="col-12 col-md-12 col-sm-12 col-lg-12">
-				<div class="alert alert-danger">
+				<div class="alert alert-danger text-center">
 					{{ errorMessage }}
 				</div>
 			</div>
@@ -55,7 +290,7 @@
 
 			{{#if successMessage }}
 			<div class="col-12 col-md-12 col-sm-12 col-lg-12">
-				<div class="alert alert-success">
+				<div class="alert alert-success text-center">
 					{{ successMessage }}
 				</div>
 			</div>
@@ -132,15 +367,20 @@
 										id="flexRadioDefault3">
 									<label class="form-check-label mx-5" for="flexRadioDefault2">
 										PayPal
-									</label>
+									</label>subscriptionPercentagee
 								</div>
+
+								
+
 								{{#if oneBook}}
 
-								<button class="place-order w-100">Place Rent</button>
+								<button class="place-order w-100" id="rentButton">Place Rent</button>
+								<div id="snackbar">As Per The Plan Maximum Count Of Rent Books Are Exceed</div>
 
 								{{else}}
 								<a class=" btn btn-success place-order w-100" href="/">Pick A Book</a>
 								{{/if}}
+
 							</div>
 						</div>
 					</div>
@@ -152,6 +392,13 @@
 
 			</div>
 
+
+
+
+
+
+			
+
 			</form>
 
 
@@ -162,6 +409,9 @@
 	</div>
 </main>
 </div>
+
+
+
 
 
 

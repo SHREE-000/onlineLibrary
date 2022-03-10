@@ -1,0 +1,78 @@
+
+<div class="container row d-flex align-items-center justify-content-center mt-5 mb-5" 
+style="box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, 
+rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px; width:50%;">
+
+  
+ {{#each searchedProducts}}
+
+ <div class="container row d-flex align-items-center justify-content-center mt-5 mb-5" 
+style="box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, 
+rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px; width:50%;">
+
+    <div class="card" style="width: 18rem;">
+  {{!-- <img class="card-img-top" src="/book-images/{{this._id}}1.jpeg" alt="Card image cap"> --}}
+
+ 
+                    <div class="single-slide">
+                        <div class="product-card">
+                            
+                            <div class="product-card--body">
+                                <div class="card-image mt-5">
+                                    <img src="/book-images/{{this._id}}1.jpeg" alt="">
+                                    <div class="hover-contents">
+                                        <a href="/product-details/{{this._id}}" class="hover-image">
+                                            <img src="/book-images/{{this._id}}1.jpeg" alt="">
+                                        </a>
+                                        <div class="hover-btns">
+                                            <button onclick="addToCart('{{this._id}}')" type="button" class="single-btn">
+                                                <i class="fas fa-shopping-basket"></i>
+                                            </button>
+                                            <a href="/wishlist" class="single-btn">
+                                                <i class="fas fa-heart"></i>
+                                            </a>
+                                           
+                                        </div>
+                                    </div>
+                                </div>
+
+                               
+
+                            </div>
+                        </div>
+                    </div>
+
+                            
+
+
+  <div class="card-body text-center">
+      <div class="product-header">
+    <h5 class="card-title" style="font-size: .8rem;">
+        <a href="#" class="author">
+                                   {{this.book_author}}'s
+                                </a>
+    </h5>
+    <p class="card-text">
+        <h3  style="font-size: 1rem; font-weight: bold; height: 80px;"><a href="/product-details/{{this._id}}">
+        {{this.book_name}}
+                                  </a></h3>
+    </p>
+    <a href="/cart" class="btn btn-primary">Goto Cart</a>
+  </div>
+  </div>
+
+</div>
+</div>
+ {{/each}}
+
+</div>
+
+
+
+                                
+                                
+                            </div>
+
+
+
+                 

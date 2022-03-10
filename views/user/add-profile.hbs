@@ -9,6 +9,27 @@
 					<div class="row row-40">
 						<div class="col-12">
 							<h1 class="quick-title">Add New Address</h1>
+
+
+
+							 {{#if errorMessage }}
+                                    <div class="col-12 col-md-12 col-sm-12 col-lg-12">
+                                        <div class="alert alert-danger">
+                                            {{ errorMessage }}
+                                        </div>
+                                    </div>
+                                {{/if }}
+
+                                {{#if successMessage }}
+                                    <div class="col-12 col-md-12 col-sm-12 col-lg-12">
+                                        <div class="alert alert-danger text-center">
+                                            {{ successMessage }}
+                                        </div>
+                                    </div>
+                                {{/if }}
+
+
+
 							<!-- Slide Down Trigger  -->
 							<div class="checkout-quick-box">
 								<p><i class="far fa-sticky-note"></i>Returning customer? <a href="javascript:"

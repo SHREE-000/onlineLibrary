@@ -1,5 +1,15 @@
 // const { response } = require("express");
 
+// const Response = require("twilio/lib/http/response");
+
+// const { x } = require("pdfkit");
+// const doc = require("pdfkit");
+
+// const { Code } = require("mongodb");
+
+
+
+
 
 
 
@@ -79,14 +89,65 @@ for ( i = 0 ; i < td.length ; i++ ) {
     td[i].innerHTML = i + 1
 }
 
-// for table product view (searching and sorting)
 
+// add to wishlist
 
-$(document).ready(function(){
-    $('#myTable').dataTable();
-});
+function addToWishlist(proId) {
+    $.ajax({
+        url : '/add-to-wishlist/'+ proId ,
+        method :'get' ,
+        success : (response)=> {
+            if(response.status){
 
+                let count =$('#wishlist-count').html()
+                count = parseInt(count) + 1
+                $("#wishlist-count").html(count)
 
+                // let shiprate = $('#ship-rate').html()
+
+                // let total =$('#total-rate').html()
+                // total = response.shiprate * response.cartCount
+                // $('#total-rate').html(total) wishlist
+            }
+         
+        }
+    })
+}
+
+// for delete wishlist
+
+function deleteWishlist(event , proId , bookName) {
+    event.preventDefault();
+
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "Do you want to delete" +bookName +'?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes'
+    }).then(async(result) => {
+        console.log(result);
+            if (result.isConfirmed) {
+                let response = await fetch("http://localhost:3000/delete-wishlist-product", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    proId: proId
+    
+                })
+            })
+            location.reload()
+            }
+            else {
+                return false
+            }
+    })
+    
+}
 
 // for add to cart
 
@@ -97,8 +158,12 @@ function addToCart(proId) {
         success : (response)=> {
             if(response.status){
 
-                let count =$('#cart-count').html()
-                count = parseInt(count) + 1
+                let countt =$('#cart-count').html()
+
+                let count = parseInt (countt)
+
+                count = count + 1
+            
                 $("#cart-count").html(count)
 
                 // let shiprate = $('#ship-rate').html()
@@ -327,6 +392,7 @@ $("#inputState").change(function(){
 
 
 (async function() {$("#checkOut-form").submit( (e) => {
+
     
     e.preventDefault() 
     $.ajax({
@@ -334,7 +400,7 @@ $("#inputState").change(function(){
         method : 'post' ,
         data : $('#checkOut-form').serialize(),
         success : async (response) => {
-            alert(response)
+  
             if (response.COD_Success) {
                 location.href='/place-order'
             }
@@ -356,8 +422,7 @@ $("#inputState").change(function(){
 
 
 function razorPayPayment (order) {
-    alert(order.id)
-    alert(order.amount)
+
 
     
     var options = {
@@ -452,7 +517,7 @@ function verifyPayment(payment,order) {
     function displaySelected() {
         var country = document.getElementById("categorys").value;
         var city = document.getElementById("subcategorys").value;
-        alert(country + "\n" + city);
+
     }
 
     function resetSelection() {
@@ -477,8 +542,6 @@ function verifyPayment(payment,order) {
           
 
           function validationAddProduct() {
-
-            alert("Im inside validation Product")
               
             let bookName = document.getElementById("bookName").value
             let book_number = document.getElementById("book_number").value
@@ -535,47 +598,48 @@ function verifyPayment(payment,order) {
 
 // for checkout and payment for subscription
 
-// (async function() {$("#checkoutPlan").submit( (e) => {
-//     alert("Im reached - 1")
- 
+
+// (async function() {$("#btn_checkoutPlan").submit( (e) => {
+
+    
+//     e.preventDefault() 
 //     $.ajax({
 //         url : '/checkout-subscription' ,
 //         method : 'post' ,
-//         data : $('#checkoutPlan').serialize(),
+//         data : $('#btn_checkoutPlan').serialize(),
 //         success : async (response) => {
-            
+
 //             if (response.payPal_success) {
+//                 alert("paypal")
 //                 location.href = '/payPal'
 //             }
 //             else{
+//                 alert("razorPay")
                 
-//                 razorPayPaymentForSubscription(response) 
-//                 alert("Im reached - 2")
-//                 alert(response)
+//                 razorPayPaymentForSubscription(response)
                 
 //             }
 //         }
 
 //     })
-       
-//     e.preventDefault() 
 
 // })
 // })
 // ()
 
+
+
 $('#btn_checkoutPlan').on('submit' , (e) => {
+
     $.ajax({ 
         url : '/checkout-subscription' ,
         method : 'post' ,
         data : $('#btn_checkoutPlan').serialize(),
         success : (response) => {
-            if (response.status) {
-               
+            if (response.status) {               
                 razorPayPaymentForSubscription(response)   
             }
             else{
-                
                 location.href = '/payPal'              
             }
         }
@@ -599,10 +663,6 @@ function razorPayPaymentForSubscription (order) {
         "image": "https://example.com/your_logo",
         "order_id": order.id, //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
         "handler": function (response){
-            
-        // alert(response.razorpay_payment_id);      
-        // alert(response.razorpay_order_id);
-        // alert(response.razorpay_signature)
 
         verifyPaymentSubscription(response,order)  
             
@@ -647,6 +707,262 @@ function verifyPaymentSubscription(payment , order) {
     })
 
 }
+
+// for coppy & paste
+
+function myFunction() {
+    var copyText = document.getElementById("myInput");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(copyText.value);
+    
+    var toool = document.getElementById("mytoool");
+    toool.innerHTML = "Copied: " + copyText.value;
+  }
+  
+  function outFunc() {
+    var toool = document.getElementById("mytoool");
+    toool.innerHTML = "Copy to clipboard";
+  }
+
+//   for coupon code    
+
+
+function couponCode() {
+  
+    let ableDisable = document.getElementById("ableDisable")
+    let givenCode = document.getElementById("codeCoupon").value
+    let givenRate = document.getElementById("rate").value
+    let newGivenRate = parseFloat(givenRate) 
+    let finalRate = document.getElementById("finalRate")
+
+    
+    
+        $.ajax ({
+            url : '/gettingCoupon',
+            data : {
+                givenCode,
+                newGivenRate
+            },
+            method : 'post' ,
+            success : (response) => {
+                console.log(response.coupon , "alert from couponCode")
+
+                if (response.status) {
+
+                if (response.coupon == response.code) {
+                    document.getElementById("amount").innerHTML = "You Have Already Used This Coupon"
+                   ableDisable.style.display = "block"
+                   document.getElementById("total_head").style.color = "red";
+                }
+                else {
+                    
+                    if (response.code == givenCode) {                 
+
+                        document.getElementById("amount").innerHTML = response.discountedRate + "!!!"
+                        ableDisable.style.display = "block"
+                        document.getElementById("total_head").style.color = "red";
+                        document.getElementById("finalRate").innerHTML = response.finalAmount 
+                        
+                     }
+                     else{
+                         alert("faild")
+                     }
+
+                }
+            }
+            else {
+
+                document.getElementById("amount").innerHTML = "You Entered Invalid Coupon Code"
+                   ableDisable.style.display = "block"
+                   document.getElementById("total_head").style.color = "red";
+                   document.getElementById("finalRate").innerHTML = response.newGivenRate 
+
+            }
+
+                
+            }
+        })
+
+    }
+
+  
+    // for data table using order view and user view in admin side
+
+    document.addEventListener('DOMContentLoaded', function () {
+let table = new DataTable('#example');
+});
+
+// for table product view (searching and sorting)
+
+
+$(document).ready(function(){
+    $('#myTable').dataTable();
+});
+
+
+// finding rental count
+
+const total = parseInt (document.getElementById("totalCount").innerHTML)
+const rentCount = document.getElementById("rentCount").innerHTML
+const currentCount = total - rentCount
+document.getElementById("currentCount").innerHTML = currentCount
+
+
+// for download pdf && excel
+
+
+function print() { 
+    var element = document.getElementById('tblData');
+    var opt = {
+      margin: 1,
+      filename: 'Sales-report.pdf',
+      image: { type: 'jpeg', quality: 1 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'b4', orientation: 'landscape' }
+    };
+    var worker = html2pdf().set(opt).from(element).save();
+
+  }
+
+
+function exportTableToExcel(tableID, filename = ''){
+    var downloadLink;
+    var dataType = 'application/vnd.ms-excel';
+    var tableSelect = document.getElementById(tableID);
+    var tableHTML = tableSelect.outerHTML.replace(/ /g, '%20');
+    
+    filename = filename?filename+'.xls':'excel_data.xls'; 
+    downloadLink = document.createElement("a");
+    document.body.appendChild(downloadLink); 
+    if(navigator.msSaveOrOpenBlob){
+        var blob = new Blob(['\ufeff', tableHTML], {
+            type: dataType
+        });
+        navigator.msSaveOrOpenBlob( blob, filename);
+    }else{   
+        downloadLink.href = 'data:' + dataType + ', ' + tableHTML;   
+        downloadLink.download = filename;    
+          downloadLink.click();
+    }
+}
+
+
+
+// starting and ending date for table
+
+$(function () {
+    var dtToday = new Date();
+
+    var month = dtToday.getMonth() + 1;
+    var day = dtToday.getDate();
+    var year = dtToday.getFullYear();
+    if (month < 10)
+        month = '0' + month.toString();
+    if (day < 10)
+        day = '0' + day.toString();
+    var maxDate = year + '-' + month + '-' + day;
+    $('#startdate').attr('max', maxDate);
+});
+
+
+
+  $(function () {
+    var dtToday = new Date();
+
+    var month = dtToday.getMonth() + 1;
+    var day = dtToday.getDate();
+    var year = dtToday.getFullYear();
+    if (month < 10)
+        month = '0' + month.toString();
+    if (day < 10)
+        day = '0' + day.toString();
+
+    var maxDate = year + '-' + month + '-' + day;
+
+
+    $('#enddate').attr('max', maxDate);
+})
+ 
+// radio button validation
+
+// function radioValidation () {
+
+//     let radioButtons = document.querySelectorAll('input[name="subscription_rate"]');
+    // let monthRadio = document.getElementById("monthly")
+    // let yearRadio = document.getElementById("yearly")
+
+//     if(document.getElementById('monthly').checked == true) { 
+//         alert("its month")  
+//         return true   
+// } else if (document.getElementById('yearly').checked == true) {
+//     alert("its year")
+//     return true
+    
+// } else {  
+//     alert("its false")
+//         return false   
+// }
+
+    
+
+    // if (monthRadio.checked || yearRadio.checked) {
+    //     alert("inside if case")
+    //     return true
+    // }
+    // else {
+    //     alert("inside else case")
+
+    //     for (const r of radioButtons) {    
+    //         if (r.checked) {
+    //             return true
+    //         }else {
+    //             document.getElementById("error").innerHTML = "Please Choose Any One Of Plan Before You Submit"
+    //             return false
+    //         }
+    //     }
+
+
+    // }
+
+    
+// }
+
+
+// cart message 
+
+async function rentExceed() {
+    
+    const response = await fetch( "/checkout-fetch")
+    let newResponse = await response.json()
+    if ( newResponse.maxCount > newResponse.trueCount || newResponse.maxCount == newResponse.trueCount ) {
+        window.location ='/checkout'
+    }
+    else {
+var x = document.getElementById("snackbar");
+x.className = "show";
+setTimeout(function(){ x.className = x.className.replace("show", ""); }, 10000);
+    }
+    
+}
+
+(async function (){
+
+    const response = await fetch( "/checkout-fetch")
+    let newResponse = await response.json()
+    console.log(newResponse);
+    if ( newResponse.maxCount > newResponse.trueCount || newResponse.maxCount == newResponse.trueCount ) {
+        window.location ='/checkout'
+    }
+    else {
+
+var x = document.getElementById("snackbar");
+x.className = "show";
+setTimeout(function(){ x.className = x.className.replace("show", ""); }, 10000);
+    }
+})();
+
+
 
 
           

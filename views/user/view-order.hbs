@@ -41,7 +41,9 @@
        <td>{{this.payment}}</td>
       <td>{{this.status}}</td>
       <td> <a href="/order-book-details/{{this.book_id}}" class="btn btn-primary" >Book Details </a> </td>
+      {{#if this.isActive}}
       <td> <a href="/cancel-order/{{this._id}}" class="btn btn-danger" onclick="return confirm('Data ({{this.book_name}}) will delete permanently, are you sure ?')" >Cancell </a> </td>
+      {{/if}}
     </tr>
     {{/each}}
             

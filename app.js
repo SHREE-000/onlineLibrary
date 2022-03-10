@@ -10,6 +10,7 @@ const MongoStore = require('connect-mongo')
 var db = require('./config/connection')
 var fileUpload = require('express-fileupload')
 var Promise = require('promise')
+const fs = require('fs')
 
 var indexRouter = require('./routes/index');
 var u_loginRouter = require('./routes/user/login');
@@ -87,7 +88,7 @@ app.use(function(err, req, res, next) {
 
   // render the error page
   res.status(err.status || 500);
-  res.render('error');
+  res.render('admin/errorPage', {errorPartial : true});
 });
 
 module.exports = app;

@@ -5,10 +5,12 @@ const bodyParser = require("body-parser");
 const { _router } = require("../../app");
 const { response } = require("express");
 const userOtpHelper = require("../../helpers/user_otp");
-const service_sid = "VA2156cee5c46526aa31fc0f4c7e479e32";
-const account_sid = "AC09273ea73c471737868e40c09eb30995";
-const auth_token = "8ab008808b2a639adebca2ee49348509";
+require('dotenv').config()
+const account_sid = process.env.ACCOUNT_SID_TWILIO
+const service_sid = process.env.SERVICE_SID_TWILIO
+const auth_token = process.env.AUTH_TOKEN_TWILIO
 const client = require("twilio")(account_sid, auth_token);
+
 const userOtpLoginHelper = require("../../helpers/user_otpLogin");
 
 router.use(
@@ -20,13 +22,12 @@ router.use(
 router.use(bodyParser.json());
 
 router.get("/", (req, res) => {
-  const user_partial = "User partial";
 
   const errorMessage = req.session.errorMessage;
   req.session.errorMessage = null;
   const successMessage = req.session.successMessage;
   req.successMessage = null;
-  res.render("user/otp", { errorMessage, successMessage, user_partial });
+  res.render("user/otp", { errorMessage, successMessage, user_partial : true });
 });
 
 router.post("/", (req, res) => {

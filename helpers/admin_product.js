@@ -8,6 +8,8 @@ const { USER_ADDRESS_DATA } = require('../config/collections')
 const Razorpay = require('razorpay')
 const paypal = require('paypal-rest-sdk') 
 const { LOADIPHLPAPI } = require('dns')
+const { count } = require('console')
+const { y } = require('pdfkit')
 
 var instance = new Razorpay({
     key_id: 'rzp_test_4s8ud71AFs83mi',
@@ -96,11 +98,26 @@ adminAddProduct : (productData) => {
     return new Promise (async (resolve , reject) => {
 
         db.get().collection(collection.ADMIN_BOOK_COLLECTION).insertOne(productData).then ( (data) => {
+                    
             resolve ({status : true , productId : data.insertedId })
            
         })
     
     })
+} ,
+
+adminAddProductDate : (id) => {
+    return new Promise (async (resolve , reject) => {
+    await db.get().collection(collection.ADMIN_BOOK_COLLECTION).updateOne({ _id : objectId (id) },
+    {
+        $set : 
+        {
+            book_added_date : new Date()
+        }
+    })
+    resolve()
+})
+
 } ,
 
 getAllProduct : () => {
@@ -161,12 +178,47 @@ findOneProduct : (id) => {
     })
 } ,
 
-addCart : (productId , userId) => {
+addWishlist : (productId , userId) => {
     return new Promise (async (resolve , reject)  => {
 
-        let bookCart = await db.get().collection(collection.CART_COLLECTION).findOne({product : objectId(productId)})
+        let bookCart = await db.get().collection(collection.WISHLIST_COLLECTION).findOne({product : objectId(productId)})
 
         if(!bookCart) {
+
+        const userCart = await db.get().collection(collection.WISHLIST_COLLECTION).findOne({user : objectId(userId)})
+
+        if(userCart) {
+                  
+            await db.get().collection(collection.WISHLIST_COLLECTION).updateOne({user : objectId(userId)} ,
+            {
+                $push : {
+                    product : objectId(productId)
+                }
+            })
+            resolve()
+        }
+
+
+        else {
+            const cartObj = {
+                user : objectId(userId) ,
+                product : [objectId(productId)]
+            }
+
+            await db.get().collection(collection.WISHLIST_COLLECTION).insertOne(cartObj).then( (response))
+            resolve()
+        }
+    }
+
+    else {
+        resolve({errorMessage : "You can order only one book at a time"})
+    }
+
+    })
+} ,
+
+addCart : (productId , userId) => {
+    return new Promise (async (resolve , reject)  => {
 
         const userCart = await db.get().collection(collection.CART_COLLECTION).findOne({user : objectId(userId)})
 
@@ -188,14 +240,10 @@ addCart : (productId , userId) => {
                 product : [objectId(productId)]
             }
 
-            await db.get().collection(collection.CART_COLLECTION).insertOne(cartObj).then( (response))
+            await db.get().collection(collection.CART_COLLECTION).insertOne(cartObj)
             resolve()
         }
-    }
 
-    else {
-        resolve({errorMessage : "You can order only one book at a time"})
-    }
 
     })
 } ,
@@ -229,18 +277,81 @@ getCartItem : (userId) => {
     }) 
 } ,
 
+getWishItem : (userId) => {
+    return new Promise (async (resolve, reject) => {
+        const wishItems = await db.get().collection(collection.WISHLIST_COLLECTION).aggregate([
+            {
+                $match : {
+                    user : objectId(userId)
+                }      
+            },
+                {
+                    $lookup : {
+                        from : collection.ADMIN_BOOK_COLLECTION , 
+                        let : {productList : '$product'} ,  
+                        pipeline : [{
+                            $match : {
+                                $expr : {
+                                    $in : ['$_id' , "$$productList"]
+                                }
+                            }
+                        }] ,
+                        as : 'wishItems'
+                    }
+                }
+        ]).toArray()
+        
+       
+        resolve(wishItems)
+    }) 
+} ,
+
+getWishlistCount : (userId) => {
+    return new Promise( async(resolve , reject) => {
+
+        const cart = await db.get().collection(collection.WISHLIST_COLLECTION).findOne({user : objectId(userId)})
+
+        if (cart) {
+             countt = cart.product.length               
+        }
+        else {
+            countt = 0
+        }
+        resolve(countt)
+        
+    })
+},
+
+deleteWishlist : (productId,userId) => {
+    return new Promise(async (resolve,reject) => {
+
+        db.get().collection(collection.WISHLIST_COLLECTION).updateOne(
+            {
+            user : objectId(userId)
+        },
+        {
+            $pull : {
+                product : objectId(productId)
+            }
+        }
+    )
+    resolve()
+    })
+    
+},
+
 getCartCount : (userId) => {
     return new Promise( async(resolve , reject) => {
 
         const cart = await db.get().collection(collection.CART_COLLECTION).findOne({user : objectId(userId)})
 
         if (cart) {
-             count = cart.product.length               
+             countt = cart.product.length               
         }
         else {
-            count = 0
+            countt = 0
         }
-        resolve(count)
+        resolve(countt)
         
     })
 },
@@ -536,11 +647,16 @@ addAddress : (user_address , userId) => {
 
 getUserAddress : ( userId) => {
 
-    console.log(userId);
     return new Promise( async (resolve , reject) => {
         let oneAddress =  await db.get().collection(collection.USER_ADDRESS_DATA).findOne({user_id : objectId(userId)})
+        if (oneAddress) {
+            resolve(oneAddress.addresses)
+        }
+        else {
+            resolve()
+        }
  
-        resolve(oneAddress.addresses)
+        
        
 
     })
@@ -621,9 +737,14 @@ getOneAddress: (addressId, userId) => {
 
 changePaymentStatusByUser : (userId , id) => {
     return new Promise( async (resolve,reject) => {
-        orderCancel = await db.get().collection(collection.ORDER_COLLECTION).updateOne({_id : objectId(id)} ,
+        orderCancel = await db.get().collection(collection.ORDER_COLLECTION)
+        
+        
+       
+        .updateOne({_id : objectId(id)} ,
         {$set : {
-            status : "Cancelled"
+            status : "Cancelled" ,
+            isActive : false
         }
     })
     resolve({successMessage : "Order Cancelled Successfully"})
@@ -745,7 +866,8 @@ changePaymentStatus : (orderId) => {
             {_id : objectId (orderId)}, 
         {
             $set : {
-                status : 'placed'
+                status : 'Placed' ,
+                isActive : true
             }
         }).then( (response) => {
             resolve ()
@@ -798,7 +920,7 @@ deletePlan : (id) => {
     })
 },
 
-findOnePlan : (data) =>{
+findOnePlanForCheckout : (data) =>{
     return new Promise (async (resolve,reject) =>{
         const subscription_rate = await db.get().collection(collection.SUBSCRIPTION_PLANS)
         .findOne({_id : objectId(data.PlanId) },
@@ -809,25 +931,11 @@ findOnePlan : (data) =>{
             ]
         }
         )
-  
         resolve(subscription_rate)
     })
 },
 
-// updatUserPlan :(data , userId) => {
-//     return new Promise (async (resolve , reject) => {
-//         db.get().collection(collection.USER_COLLECTION).updateOne({
-//             _id : objectId(userId)
-//         }, 
-//         {
-//             $set : {
-//                 Plan : data.planTitle
-//                 // subscription_date : new Date()
-//             }
-//         })
-//         resolve()
-//     }) 
-// },
+
 
 getUser : (UserId) => {
     return new Promise ( async(resolve,reject) => {
@@ -837,7 +945,7 @@ getUser : (UserId) => {
     })
 },
 
-checkOut : (data , userOriginalId,  order,oneBook,totalRate , shiprate , bookId) => {
+checkOut : (data , plan ,  userOriginalId,  order,oneBook,totalRate , shiprate , bookId) => {
 
 
 
@@ -865,7 +973,9 @@ checkOut : (data , userOriginalId,  order,oneBook,totalRate , shiprate , bookId)
             book : oneBook ,
             bookId : bookId ,
             date : new Date() ,
-            status : status
+            status : status ,
+            isActive : true ,
+            plan : plan
 
         }
         
@@ -879,24 +989,37 @@ checkOut : (data , userOriginalId,  order,oneBook,totalRate , shiprate , bookId)
     
 } ,
 
-checkOut_subscription : (userId , data  , rate , plan , validity) => {
+checkOut_subscription : (userId , data  , rate , plan , validity , state) => {
     return new Promise ( async (resolve,reject) => {
+        
+        let Oneplan = await db.get().collection(collection.SUBSCRIPTION_PLANS).findOne({ planTitle : plan})
+        let maxCountBooks = Oneplan.bookCount
 
-        db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
-        .createIndex( { "createdAt": 1 }, { expireAfterSeconds: 0 } )
+
+        await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .createIndex( { "endingAt": 1 }, { expireAfterSeconds: 0 } )
 
         let receiptObj = {
             userId : objectId(userId) ,
             amount : parseInt(rate) ,
             validity : validity ,
             plan   : plan ,
-            status : 'Pending'
+            maxCountBooks : parseInt(maxCountBooks) ,
+            state : state ,
+            status : 'Pending',
+            isActive : true ,
+            createdAt : new Date() ,
+            endingAt : new Date()
         }
+
             
-        db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION).insertOne(receiptObj).then( (response) => {            
+        await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION).insertOne(receiptObj).then( (response) => {            
             const id = response.insertedId
             resolve(id)
-        })
+        }) 
+
+        
+    
 
     })
 },
@@ -915,6 +1038,7 @@ generateRazorPayForPlan : (orderId , amount) => {
         },
             (err , order) => {
                 if(err){
+                    console.log("this is error");
                     console.log(err);
                 }
                 else{
@@ -948,27 +1072,1047 @@ verifyPaymentSubscription : (data) => {
     })
 } ,
 
-changePaymentStatusForSubscription : (orderId) => {
+changePaymentStatusForSubscription : (orderId , id) => {
     return new Promise( async(resolve,reject) => {
-        
-        let subscription = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
-        .findOneAndUpdate({_id : objectId(orderId)} , 
+
+    
+        const paid_plan = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .find({ userId : objectId(id) }).toArray()
+
+
+        console.log(paid_plan[paid_plan.length-2] , "from database");
+
+        const final_paid_plan = paid_plan[paid_plan.length-2]
+
+
+        if (paid_plan.length == 1) {
+
+        await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .findOne({_id : objectId(orderId) , userId : objectId(id) })
+        .then(async (response) => {
+            
+            if (response.validity == "month") {
+                let future = new Date();
+                let date = future.setDate(future.getDate() + 28);
+
+        await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .updateOne({_id : objectId(orderId) , userId : objectId(id)} , 
         {
             $set : {
                 createdAt : new Date() ,
-                status : "Success"
+                endingAt : new Date(date) ,
+                status : "Success" ,
+                isActive : true
+                
             }
-        })
-       
+        }) 
+
+        const subscription = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .findOne({_id : objectId(orderId) , userId : objectId(id) })
+
+        await db.get().collection(collection.TOTAL_SUBSCRIPTION_PAID_COLLECTION)
+        .insertOne(subscription) 
+
+        resolve()
+            } 
+
+            if (response.validity == "year") {
+                let future = new Date();
+                let date = future.setDate(future.getDate() + 365);
+
+        await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .updateOne({_id : objectId(orderId) , userId : objectId(id) } , 
+        {
+            $set : {
+                createdAt : new Date() ,
+                endingAt : new Date(date) ,
+                status : "Success" ,
+                isActive : true
+            }
+        }) 
+
+        const subscription = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .findOne({_id : objectId(orderId) , userId : objectId(id) })
+
+        await db.get().collection(collection.TOTAL_SUBSCRIPTION_PAID_COLLECTION)
+        .insertOne(subscription) 
+
+        // await db.get().collection(collection.TOTAL_SUBSCRIPTION_PAID_COLLECTION)
+        // .updateOne({_id : objectId(orderId) , userId : objectId(id) } ,
+        // {
+        //     $unset : {
+        //         endingAt
+        //     }
+        // }) 
+
+
+        resolve()
+            }
+
+            else {
+                resolve({errorMessage : "Failed"})
+            }
+
+
+        }) 
+    } 
+
+    else {
+
+
+   
+        const oneid = final_paid_plan._id
+
+        const specified_plan = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .findOne({_id : objectId(oneid) , userId : objectId(id)})
+
+        const removeDate = specified_plan.endingAt
+
+        await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .findOne({_id : objectId(orderId) , userId : objectId(id)})
+        .then(async (response) => {
+
+            // console.log(response , "response from databse line number 1176");
+            
+            if (response.validity == "month") {
+                let future = new Date(removeDate);
+                let date = future.setDate(future.getDate() + 28);
+
+        await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .updateOne({_id : objectId(orderId) , userId : objectId(id)} , 
+        {
+            $set : {
+                createdAt : new Date(removeDate) ,
+                endingAt : new Date(date) ,
+                status : "Success" ,
+                isActive : true
+                
+            }
+        }) 
+
+        const subscription = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .findOne({_id : objectId(orderId) , userId : objectId(id) })
+
+        await db.get().collection(collection.TOTAL_SUBSCRIPTION_PAID_COLLECTION)
+        .insertOne(subscription) 
+
+        resolve()
+            } 
+
+            if (response.validity == "year") {
+                let future = new Date(removeDate);
+                let date = future.setDate(future.getDate() + 365);
+
+        await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .updateOne({_id : objectId(orderId) , userId : objectId(id)} , 
+        {
+            $set : {
+                createdAt : new Date(removeDate) ,
+                endingAt : new Date(date) ,
+                status : "Success" ,
+                isActive : true
+            }
+        }) 
+
+        const subscription = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .findOne({_id : objectId(orderId) , userId : objectId(id) })
+
+        await db.get().collection(collection.TOTAL_SUBSCRIPTION_PAID_COLLECTION)
+        .insertOne(subscription) 
+
+
+
+        resolve()
+            }
+
+            else {
+                resolve({errorMessage : "Failed"})
+            }
+
+
+        }) 
+    }
+ 
         
     })
 },
 
-find_subscription_paid : () => {
+addCoupon : (Data) => {
+    return new Promise (async (resolve,reject) => {
+        console.log(Data.validity , "from db");
+        await db.get().collection(collection.COUPON_COLLECTION)
+        .createIndex( { "validity": 1 }, { expireAfterSeconds: 0 } )
+         
+         let date = new Date(Data.validity)
+        
+        await db.get().collection(collection.COUPON_COLLECTION).insertOne({
+            coupon_code : Data.coupon_code ,
+            plan : Data.plan ,
+            validity : date ,
+            off_percentage : Data.off_percentage
+            
+        }).then( (response)=> {
+                resolve({id : response.insertedId , successMessage : "Coupon Added Successfully"});
+            
+        })
+        
+    })
+},
 
-}
+findCoupon : () => {
+
+    return new Promise ( async (resolve,reject) => {
+        findCoupon = await db.get().collection(collection.COUPON_COLLECTION).find().toArray()
+        resolve(findCoupon)
+    })
+} , 
+
+findOnePlan : (id) => {
+
+    return new Promise ( async (resolve,reject) => {
+        const findOnePlan = await db.get().collection(collection.SUBSCRIPTION_PLANS)
+        .findOne({_id : objectId(id)})
+        resolve(findOnePlan)
+    })
+} ,
+
+deleteOneCoupon : (id) => {
+
+    return new Promise ( async (resolve,reject) => {
+        await db.get().collection(collection.COUPON_COLLECTION)
+        .deleteOne({_id : objectId(id)})
+        resolve({successMessage : "Offer Coupon Deleted Successfully"})
+    })
+} ,
+
+findCouponUsingCode : (data) => {
+    
+    return new Promise ( async (resolve,reject) => {
+        const coupon = await db.get().collection(collection.COUPON_COLLECTION).findOne({$text:{$search: data}})
+        if (coupon) {
+            resolve({coupon: coupon,status : true})
+        }
+        else {
+            resolve({status : false})
+        }
+        
+    })
+} ,
+
+viewProductUsingRegex : (content) => {
+    return new Promise (async (resolve , reject) => {
+
+        const book = await db.get().collection(collection.ADMIN_BOOK_COLLECTION).aggregate([
+            {
+                $match : {
+                    $or : [
+                        {
+                        'book_name' : {
+                            $regex : content ,
+                            $options : 'i'
+                        }
+                    } ,
+                    {
+                        'book_author' : {
+                            $regex : content ,
+                            $options : 'i'
+                        }
+                    } ,
+                    {
+                        'book_category' : {
+                            $regex : content ,
+                            $options : 'i'
+                        }
+                    } ,
+                    {
+                        'book_sub_category' : {
+                            $regex : content ,
+                            $options : 'i'
+                        }
+                    }
+                ]
+
+            }
+        } 
+            
+    ]).toArray()
+
+    resolve(book)
+        
+    })
+       
+}, 
+
+getAllUsers : () => {
+    return new Promise ( async(resolve,reject) => {
+        const user = await db.get().collection(collection.USER_COLLECTION).find().toArray()
+
+        resolve(user)
+    })
+},
+
+updatePlanForUser : (id , userId) => {
+
+    return new Promise ( async (resolve,reject) => {
+
+        await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .findOne({_id : objectId(id)}).then(async (response) => {
+            await db.get().collection(collection.USER_COLLECTION)
+            .updateOne(
+                {
+                _id : objectId(userId)
+            } ,
+            {
+                $set : {
+                    plan : response.plan,
+                    validity : response.validity,
+                    subscription_amount : parseInt(response.amount),
+                    isActivePlan : true
+                }
+            }
+        )
+        resolve()
+    })
+  }) 
+} ,
+
+disableUser : (id) => {
+    return new Promise ( async(resolve,reject) => {
+        await db.get().collection(collection.USER_COLLECTION)
+        .updateOne(
+            {
+                _id : objectId(id)
+            } ,
+            {
+                $set : {
+                    isActive : false
+                }
+            }
+        )
+
+        resolve()
+    })
+},
+
+enableUser : (id) => {
+    return new Promise ( async(resolve,reject) => {
+        await db.get().collection(collection.USER_COLLECTION)
+        .updateOne(
+            {
+                _id : objectId(id)
+            } ,
+            {
+                $set : {
+                    isActive : true
+                }
+            }
+        )
+
+        resolve()
+    })
+},
+
+disablePlan : (id) => {
+    return new Promise ( async(resolve,reject) => {
+        await db.get().collection(collection.USER_COLLECTION)
+        .updateOne(
+            {
+                _id : objectId(id)
+            } ,
+            {
+                $set : {
+                    isActivePlan : false
+                }
+            }
+        )
+
+        resolve()
+    })
+},
+
+enablePlan : (id) => {
+    return new Promise ( async(resolve,reject) => {
+        await db.get().collection(collection.USER_COLLECTION)
+        .updateOne(
+            {
+                _id : objectId(id)
+            } ,
+            {
+                $set : {
+                    isActivePlan : true
+                }
+            }
+        )
+
+        resolve()
+    })
+},
+
+findAllOrderDetails : () => {
+  
+    return new Promise (async (resolve , reject) => {
+        const order = await db.get().collection(collection.ORDER_COLLECTION).find().toArray()
+    
+        resolve(order)
+    })
+} ,
+
+cancelOrdrByAdmin : (userId , orderId) => {
+
+    return new Promise( async (resolve,reject) => {
+        await db.get().collection(collection.ORDER_COLLECTION)
+        .updateOne({ userOriginalId : objectId(userId) ,  _id : objectId(orderId) } ,
+        {$set : {
+            status : "Cancelled" 
+            
+        }
+    })
+    resolve({successMessage : "Order Cancelled Successfully"})
+    })
+},
+
+packedOrdrByAdmin : async (userId , orderId) => {
+
     
 
+    return new Promise( async (resolve,reject) => {
+        await db.get().collection(collection.ORDER_COLLECTION)
+        .updateOne({ userOriginalId : objectId(userId) , _id : objectId(orderId) } ,
+        {$set : {
+            status : "Packed" 
+                        
+        }
+    })
+        
+    resolve({successMessage : "Order Packed Successfully"})
+    })
+},
+
+shippedOrdrByAdmin : async (userId , orderId) => {
+
+
+    return new Promise( async (resolve,reject) => {
+        await db.get().collection(collection.ORDER_COLLECTION)
+        .updateOne({ userOriginalId : objectId(userId) , _id : objectId(orderId)} ,
+        {$set : {
+            status : "Shipped" 
+            
+        }
+    })
+    resolve({successMessage : "Order Shipped Successfully"})
+    })
+},
+
+deliveredOrdrByAdmin : async (userId , orderId) => {
+
+
+    const order = await db.get().collection(collection.ORDER_COLLECTION).aggregate([
+        {$match : {
+            userOriginalId : objectId(userId) ,
+            _id : objectId(orderId)
+        }
+     },
+     {
+         $unwind : "$book"
+     }
+     
+     
+]).toArray()
+
+
+    return new Promise( async (resolve,reject) => {
+        await db.get().collection(collection.ORDER_COLLECTION)
+        .updateOne({ userOriginalId : objectId(userId) , _id : objectId(orderId) } , 
+        {$set : {
+            status : "Delivered" 
+            
+        }
+    })
+
+    await db.get().collection(collection.ADMIN_BOOK_COLLECTION).updateOne({ book_name : order[0].book.book_name } ,
+            
+        { 
+            $inc: 
+            { 
+                no_of_rented_books : 1
+        }
+    }
+        )
+
+    resolve({successMessage : "Order Delivered Successfully"})
+    })
+},
+
+findAllPlans : () => {
+    return new Promise (async (resolve , response) => {
+        const plans = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION).find().toArray()
+            resolve(plans)
+        }) 
+} ,
+
+
+
+findTotalAmountAndCount : () => {
+    return new Promise (async (resolve , response) => {
+        const countt = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .aggregate([
+            {
+                $group : 
+                {
+                    _id : "$state" ,
+                    count : {
+                        "$count" : {}
+                    },
+                    sum : {
+                        $sum :  "$amount"  
+                    }
+                }
+            } 
+        ]).toArray()
+        
+            resolve(countt)
+        }) 
+} ,
+
+getdatesalesreport:(start,end)=>{
+    return new Promise(async(resolve,reject)=>{
+        let report=await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION).aggregate([
+            {
+                $match:{createdAt:{$gte:new Date(start),$lt:new Date(end)}}
+            },
+            {
+                $group : 
+                {
+                    _id : "$state" ,
+                    count : {
+                        "$count" : {}
+                    },
+                    sum : {
+                        $sum :  "$amount"  
+                    }
+                }
+            },
+            {
+                $sort:{date:-1}
+            }             
+        ]).toArray()   
+        resolve(report)
+    })
+},
+
+getdatestockesreport : (start,end) => {
+    return new Promise (async (resolve , reject) => {
+
+        const book = await db.get().collection(collection.ADMIN_BOOK_COLLECTION).aggregate([
+            {
+                $match:{book_added_date:{$gte:new Date(start),$lt:new Date(end)}}
+            },
+            {
+                $sort:{date:-1}
+            }             
+        ]).toArray()   
+        resolve(book)
+    })
+},
+
+
+findFirstUserPlans : (userId) => {
+
+    return new Promise (async (resolve , response) => {
+        const specified_plan = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .findOne({ userId : objectId(userId) })
+            resolve(specified_plan)
+        }) 
+} ,
+
+findUserPlans : (userId) => {
+    return new Promise (async (resolve , response) => {
+        const specified_plan = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+        .find({ userId : objectId(userId) }).toArray()
+            resolve(specified_plan)
+        }) 
+} ,
+
+rentedCountFromOrder : (id) => {
+  
+    return new Promise (async (resolve , reject) => {
+        const order = await db.get().collection(collection.ORDER_COLLECTION)
+        .find({ userOriginalId : objectId(id)}).toArray()
+    
+        resolve(order)
+    })
+} ,
+
+alluserOrderDetails : () => {
+  
+    return new Promise (async (resolve , reject) => {
+        const order = await db.get().collection(collection.ORDER_COLLECTION).aggregate([
+            {$match : {
+               
+            }
+         },
+         {
+             $unwind : "$book"
+         },
+         
+         
+    ]).toArray()
+  
+           resolve(order)
+    })
+} ,
+
+returnOrdrByUser : async ( booId , useId ) => {
+    let bookArray
+    let order
+    return new Promise ( async (resolve , reject) => {
+
+
+    let paidPlan = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
+    .findOne({ userId : objectId(useId)})
+
+    const planEndDate = paidPlan.endingAt 
+
+
+    const returnDate = new Date()
+    let userId = objectId(useId)
+    let bookId = objectId(booId)
+
+    let obj = {
+        userId , planEndDate , returnDate , bookId
+    }
+
+  
+    await db.get().collection(collection.RETURN_BOOK).insertOne(obj) 
+
+    
+    await db.get().collection(collection.ORDER_COLLECTION)
+    .findOne({ userOriginalId : objectId(useId)})
+    .then (async (response) => {
+        let responseArray = response.book
+        bookArray = responseArray.map( (elem) => {
+            if (elem._id == booId){
+                elem.status = "Return"
+            }
+            return elem;
+        })
+        await db.get().collection(collection.ORDER_COLLECTION)
+        .updateOne({ userOriginalId : objectId(useId) },
+        {
+            $set : 
+            {
+                book : bookArray
+            }
+        });
+       
+
+    
+        order = await db.get().collection(collection.ORDER_COLLECTION)
+        .findOne({
+            "book._id" : objectId(booId)
+        })
+
+        let responseBook = order.book
+        let book = responseBook.filter( (elem) => {
+            if (elem._id == booId){
+                return elem 
+            }
+           
+            
+        })
+ 
+
+    resolve({order , book});
+})         
+    
+})  
+
+} ,
+
+returnBooks : async (data  , useId , booId , date , plan , id , fine) => {
+
+    return new Promise ( async (resolve , reject) => {
+
+        await db.get().collection(collection.RETURN_BOOK).updateOne({ userId : useId ,  bookId : booId} ,
+            {
+                $set : {
+                    status : "Rent" ,
+                    ordered : date ,
+                    plan : plan ,
+                    fineAmountForOneDay : fine
+                }
+                
+            })       
+
+        resolve()   
+    })
+} ,
+
+findReturnBook : (bookId) => {
+    return new Promise ( async (resolve , reject) => {
+        let returnBook = await db.get().collection(collection.RETURN_BOOK)
+        .find( {userId : objectId(bookId) , status : "Return"}).toArray()
+
+        resolve(returnBook)
+    })
+} ,
+
+findAllReturnBook : () => {
+    return new Promise ( async (resolve , reject) => {
+        let returnBook = await db.get().collection(collection.RETURN_BOOK).find().toArray()
+        resolve(returnBook)
+    })
+} ,
+
+findMatchedReturnBook : (id) => {
+    return new Promise ( async (resolve , reject) => {
+        let returnBook = await db.get().collection(collection.RETURN_BOOK)
+        .find({userId : objectId(id)}).toArray()
+        resolve(returnBook)
+    })
+} ,
+
+deleteReturnBookFromOrder : (userId , bookId) => {
+    return new Promise(async (resolve,reject) => {
+
+
+
+        db.get().collection(collection.ORDER_COLLECTION).updateOne(
+            {
+                userOriginalId : objectId(userId)
+        },
+        {
+            $pull : {
+                book : 
+                {
+                    _id : objectId(bookId)
+                }
+                    
+            }
+        }
+    )
+
+    let order = await db.get().collection(collection.ORDER_COLLECTION)
+    .findOne({ userOriginalId : objectId(userId) })
+
+    if ( !order.book[0]) {
+        await db.get().collection(collection.ORDER_COLLECTION)
+    .deleteOne({ userOriginalId : objectId(userId) })
+    }
+    resolve()
+    })
+    
+},
+
+deleteReturnBookFromReturn : (userId , bookId) => {
+    return new Promise(async (resolve,reject) => {
+
+        db.get().collection(collection.RETURN_BOOK).deleteOne(
+            {
+                userId : objectId(userId) ,
+                bookId : objectId(bookId)             
+        } 
+    )
+    resolve()
+    })
+    
+},
+
+updatePremiumFineInBook : (fine) => {
+ 
+    return new Promise(async (resolve,reject) => {
+
+        db.get().collection(collection.ADMIN_BOOK_COLLECTION).updateMany(
+            {
+                book_checkPremium : "Premium"         
+        } ,
+        {
+            $set : 
+            {
+                fine
+            }
+        }
+    )
+    resolve({successMessage : "Fine Amount Updated Successfully"})
+    })
+    
+},
+
+updateNonPremiumFineInBook : (fine) => {
+
+    return new Promise(async (resolve,reject) => {
+
+        db.get().collection(collection.ADMIN_BOOK_COLLECTION).updateMany(
+            {
+                book_checkPremium : 
+                {
+                    $ne : "Premium"  
+                }
+                       
+        } ,
+        {
+            $set : 
+            {
+                fine
+            }
+        }
+    )
+    resolve({successMessage : "Fine Amount Updated Successfully"})
+    })
+    
+},
+
+reduceRentCoutAfterReturn : (userId , bookId) => {
+
+    return new Promise( async (resolve,reject) => {
+
+        const order = await db.get().collection(collection.ORDER_COLLECTION)
+        .findOne({ userOriginalId : objectId(userId) , _id : objectId(orderId) , status : "Delivered" })
+
+        if (order) {
+
+    await db.get().collection(collection.ADMIN_BOOK_COLLECTION).updateOne( { _id : objectId (bookId) } ,
+        
+        { 
+            $inc: 
+            { 
+                no_of_rented_books : -1
+        }
+    }
+        )
+        resolve({successMessage : "Return Conformed Successfully"})
+
+}
+
+   
+    })
+},
+
+updateReturnBooks : (userId , bookId , fineAmount) => {
+    return new Promise(async (resolve,reject) => {
+
+        let fine = await db.get().collection(collection.RETURN_BOOK).findOne({
+            userId : objectId(userId) ,
+                bookId : objectId(bookId)   
+        })
+
+        if (fine) {
+
+        let fineUsers = await db.get().collection(collection.FINE_AMOUNT_USERS)
+        .findOne({
+            userId : objectId(userId) ,
+                bookId : objectId(bookId)
+        })
+
+        if (fineUsers) {
+            await db.get().collection(collection.FINE_AMOUNT_USERS).updateOne({
+                userId : objectId(userId) ,
+                bookId : objectId(bookId) 
+            } ,
+            {$set :
+            {   fineAmount : fineAmount ,
+                fine ,
+                msgSendDate : new Date()
+            }
+        })
+
+        }
+        else {
+            await db.get().collection(collection.FINE_AMOUNT_USERS).insertOne(
+                {
+                    userId : objectId(userId) ,
+                    bookId : objectId(bookId) ,
+                    fineAmount : fineAmount ,
+                    fine  ,
+                    msgSendDate : new Date()          
+            } 
+        )
+        }
+
+        
+    resolve()
+    } 
+    else {
+        resolve({errorMessage : "No Books Were Returned"})
+    }
+}) 
+    
+},
+
+findFineAmount : (id) => {
+    return new Promise ( async (resolve , reject) => {
+        const fineUser = await db.get().collection(collection.FINE_AMOUNT_USERS).find({
+            userId : objectId(id)
+        }).toArray()
+        resolve(fineUser)
+    })
+} , 
+
+
+findTotalAmountPerMonth : () => {
+    return new Promise (async (resolve , response) => {
+        let countt = await db.get().collection(collection.TOTAL_SUBSCRIPTION_PAID_COLLECTION)
+        .aggregate([
+
+            {
+                                $group : 
+                                {
+                                    _id: { $month: "$createdAt" },
+                                    count : {
+                                        "$count" : {}
+                                    },
+                                    sum : {
+                                        $sum :  "$amount"  
+                                    } 
+                                } 
+                              
+                            } 
+            
+        ]).sort({_id:1}).toArray()
+            let obj ={}
+            let arr = []
+        for(let i =1;i<=12;i++){
+            obj[i] = 0
+        }
+        for(const x of countt){
+            obj[x._id] = x.sum
+
+        }
+        for(let x in obj){
+            arr.push(obj[x])
+        }
+            resolve(arr)  
+        }) 
+} ,
+
+findTotalPaidSubscription : () => {
+    return new Promise ( async (resolve , reject) => {
+        const totalSubscription = await db.get().collection(collection.TOTAL_SUBSCRIPTION_PAID_COLLECTION).find().toArray()
+        resolve(totalSubscription)
+    })
+} , 
+
+userDataUsingState : () => {
+    return new Promise ( async (resolve , reject) => {
+        let state = [] 
+        let countOfState = [] 
+        let sumOfSubscription = []
+        let temp
+
+        const userState = await db.get().collection(collection.TOTAL_SUBSCRIPTION_PAID_COLLECTION).
+        aggregate([
+            {
+                $group : 
+                {
+                    _id : "$state" ,
+                    count: { $count: { }
+                 } ,
+                 
+                    sum : 
+                    {
+                        $sum : "$amount"
+                    }
+                
+
+                } 
+                
+            } 
+            
+        ]).sort({count : -1}).toArray()
+
+        for ( let i = 0; i < userState.length; i++) {
+            temp = userState[i]._id
+            state.push(temp) 
+            temp = userState[i].count
+            countOfState.push(temp)
+            temp = userState[i].sum
+            sumOfSubscription.push(temp)
+        }
+
+        if (userState && state && countOfState && sumOfSubscription) {
+            resolve({userState , state , countOfState , sumOfSubscription});
+        }
+        
+        
+    })
+} ,
+ 
+// userDataUsingState : () => {
+//     return new Promise ( async (resolve , reject) => {
+//         let state = [] 
+//         let countOfState = [] 
+//         let sumOfSubscription = []
+//         let temp
+
+//         const userState = await db.get().collection(collection.USER_COLLECTION).
+//         aggregate([
+//             {
+//                 $group : 
+//                 {
+//                     _id : "$user_state" ,
+//                     count: { $count: { }
+//                  } ,
+                 
+//                     sum : 
+//                     {
+//                         $sum : "$subscription_amount"
+//                     }
+                
+
+//                 } 
+                
+//             } 
+            
+//         ]).sort({count : -1}).toArray()
+
+//         for ( let i = 0; i < userState.length; i++) {
+//             temp = userState[i]._id
+//             state.push(temp) 
+//             temp = userState[i].count
+//             countOfState.push(temp)
+//             temp = userState[i].sum
+//             sumOfSubscription.push(temp)
+//         }
+
+//         if (userState && state && countOfState && sumOfSubscription) {
+//             resolve({userState , state , countOfState , sumOfSubscription});
+//         }
+        
+        
+//     })
+// } ,
+
+addCouponUser : (userId , coup) => {
+    return new Promise ( async (resolve , reject) => {
+
+        if (coup) {
+            await db.get().collection(collection.USER_COLLECTION)
+        .updateOne({_id : objectId (userId)} ,
+            {
+                $push :
+                {
+                    coupon : coup
+                } 
+            }
+            )
+        }
+        
+        resolve()
+    })
+} ,
+
+findCouponinUser : (userId , couponCod) => {
+    console.log(userId , couponCod , "from database");
+    return new Promise ( async (resolve , reject) => {
+        const coupon = await db.get().collection(collection.USER_COLLECTION)
+        .findOne({ _id : objectId(userId) , coupon : couponCod })
+        if (coupon) {
+            resolve (couponCod)
+        }else {
+            resolve()
+        }
+    })
+}
 
 
 

@@ -8,6 +8,8 @@ const collections = require('../config/collections')
 module.exports = {
 
 doUserLogin : (userdata) => {
+
+    console.log(userdata , "userdata from db");
     return new Promise ( async (resolve , reject) => {
 
         const response = {}

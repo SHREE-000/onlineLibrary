@@ -1,4 +1,4 @@
-<form id="btn_checkoutPlan">
+<form id="btn_checkoutPlan" >
     <section class="breadcrumb-section">
         <h2 class="sr-only">Site Breadcrumb</h2>
         <div class="container ">
@@ -25,7 +25,7 @@
 
 
                                 <div class="checkout-quick-box">
-                                    <p><i class="far fa-sticky-note"></i>Have a coupon? <a href="javascript:"
+                                    <p><i class="far fa-sticky-note"></i>Have a coupon? <a href="/coupon-view"
                                             class="slide-trigger" data-target="#quick-cupon">
                                             Click here to enter your code</a></p>
                                 </div>
@@ -76,8 +76,29 @@
 
                                     </ul>
 
+                                   <ul>
+                                       <li>
+                                   <h4>Coupon Code &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                       <input class=" rounded text-danger" value="" id="codeCoupon" 
+                                       onchange="couponCode()" type="text" name="coupon"style="width : 50% ">
+                                   </h4>
+                                       </li>
+                                   </ul>
 
-                                    <h4>Grand Total <span>₹{{subscription_rate}}</span></h4>
+                                    <ul id="ableDisable" style="display: none;">
+                                       <li>
+                                   <h4 id="discounedAmount">
+                                       You Have Saved &nbsp;&nbsp;&nbsp;
+                                       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                       ₹<span><h1 id="amount" style="color: red; font-weight: bold;"></h1> </span>
+                                   </h4>
+                                       </li>
+                                   </ul> 
+
+                                   <input type="text"  id="rate"  value="{{subscription_rate}}" hidden>
+
+                                    <h4 id="total_head">Grand Total
+                                        <span id="finalRate" class="fw-bold">₹{{subscription_rate}}</span></h4>
 
 
                                     <div class="form-check ">
@@ -96,7 +117,7 @@
                                     </div>
 
 
-                                    <button  class="place-order w-100 ">Proceed To Pay</button>
+                                    <button class="place-order w-100 ">Proceed To Pay</button>
 
 
                                     {{!-- <a class=" btn btn-success place-order w-100" href="/">Pick A Book</a> --}}

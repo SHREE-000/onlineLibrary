@@ -30,6 +30,22 @@
         margin: 0 auto;
       }
     </style>
+
+    {{#if errorMessage }}
+                                    <div class="col-12 col-md-12 col-sm-12 col-lg-12">
+                                        <div class="alert alert-danger">
+                                            {{ errorMessage }}
+                                        </div>
+                                    </div>
+                                {{/if }}
+
+                                {{#if successMessage }}
+                                    <div class="col-12 col-md-12 col-sm-12 col-lg-12">
+                                        <div class="alert alert-danger">
+                                            {{ successMessage }}
+                                        </div>
+                                    </div>
+                                {{/if }}
     
       <div class="card">
       <div style="border-radius:200px; height:200px; width:200px; background: #F8FAF5; margin:0 auto;">
@@ -39,7 +55,7 @@
         margin-left:-15px;">✓</i>
       </div>
         <h1>Success</h1> 
-        <p>We have received your payment;<br/> Thank You!</p>
+        <p>We have received your rental request;<br/> Thank You!</p>
       </div>
     
 {{#if rent}} 

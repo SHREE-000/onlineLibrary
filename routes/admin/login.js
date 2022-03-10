@@ -6,10 +6,7 @@ const adLogginHelpers = require ('../../helpers/admin_login')
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { _router } = require("../../app");
-const service_sid = "VA2156cee5c46526aa31fc0f4c7e479e32";
-const account_sid = "AC09273ea73c471737868e40c09eb30995";
-const auth_token = "8ab008808b2a639adebca2ee49348509";
-const client = require("twilio")(account_sid, auth_token);
+
 
 router.use ( (req, res, next) => {
 
@@ -31,7 +28,7 @@ router.get ('/', (req,res) => {
     req.session.admin = null
     const errorMessage = req.session.errorMessage
     req.session.errorMessage = null
-    res.render('admin/login', {admin ,errorMessage})
+    res.render('admin/login', {admin , admin_partial : true , errorMessage})
     
 })
 

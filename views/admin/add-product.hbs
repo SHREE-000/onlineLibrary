@@ -127,7 +127,7 @@
                     {{/if}}
                   </div>
 
-
+                  
                    <div class="form-group col-md-6">
                     <label for="category">Sub Category</label>
                     <select name="book_sub_category" id="subcategorys" size="1" class="custom-select p-2">
@@ -235,7 +235,7 @@
       //Image preview
       const img_data = fileInput.files[0]
       const url = URL.createObjectURL(img_data)
-      imagebox.innerHTML = `<img src="${url}" id="image" style="width:100%">`
+      imagebox.innerHTML = `<img src="${url}" id="image" style="width:100%;" >`
       const image = document.getElementById('image')
       document.getElementById('image-box1').style.display = 'block'
       document.getElementById('crop-btn1').style.display = 'block'
@@ -247,10 +247,11 @@
         scalable: false,
         zoomable: false,
         movable: false,
-        aspectRatio: 16 / 19,
+        aspectRatio: 62 / 100,
         //  preview: '.preview',
         minCropBoxWidth: 100,
         minCropBoxHeight: 100,
+        
       })
       crop_btn.addEventListener('click', () => {
         cropper.getCroppedCanvas().toBlob((blob) => {
@@ -297,7 +298,7 @@
         scalable: false,
         zoomable: false,
         movable: false,
-        aspectRatio: 16 / 19,
+        aspectRatio: 62 / 100,
         //  preview: '.preview',
         minCropBoxWidth: 180,
         minCropBoxHeight: 240,
@@ -347,7 +348,7 @@
         scalable: false,
         zoomable: false,
         movable: false,
-        aspectRatio: 16 / 19,
+        aspectRatio: 62 / 100,
         //  preview: '.preview',
         minCropBoxWidth: 180,
         minCropBoxHeight: 240,
@@ -397,7 +398,7 @@
         scalable: false,
         zoomable: false,
         movable: false,
-        aspectRatio: 16 / 19,
+        aspectRatio: 62 / 100,
         //  preview: '.preview',
         minCropBoxWidth: 180,
         minCropBoxHeight: 240,

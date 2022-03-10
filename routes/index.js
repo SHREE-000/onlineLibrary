@@ -5,6 +5,8 @@ var productHelpers = require ('../helpers/admin_product')
 var moment = require ('moment')
 const paypal = require('paypal-rest-sdk'); 
 const { resolve } = require('promise');
+const schedule = require('node-schedule');
+const { Db } = require('mongodb');
 
 
 paypal.configure({
@@ -12,6 +14,9 @@ paypal.configure({
   'client_id': 'AdY0khx1uxYu4HS3UJsnt_-AgNUCy2PsV6PbvX8W66fbLedU699d4WVYIZEq2k988aBgm-MUP_pGynkq',
   'client_secret': 'EHvW5lXVGsh92R6nsEmjAeY0B3vv24YUTeqtgsIfMQi6v69ArYqc9A0eHUY6uDm3OiHwVhgKKM5j4afQ'
 });
+
+
+
 
 
 const verifyLogin = ( (req,res,next) =>{
@@ -37,9 +42,11 @@ router.get('/',  async(req, res, next) => {
   let shiprate
   let onBook 
   let oneBook
+  let wishlistCount
   
 
   if (req.session.user) {
+  wishlistCount = await productHelpers.getWishlistCount(req.session.user._id)
   cartCount = await productHelpers.getCartCount(req.session.user._id) 
   shiprate = await productHelpers.findDeliveryRate() 
   onBook = await productHelpers.getCartItem(req.session.user._id)
@@ -60,15 +67,12 @@ router.get('/',  async(req, res, next) => {
   let couponBannerDetails = coupondetails.couponBanner
   let findCategory = await productHelpers.findCategory() 
   let category = findCategory.category
-  
-  
- 
 
   const user = req.session.user
   res.render('index', {  title: 'Bookleaves' , user , book , user_partial : true ,  
   authorBannerDetails , firstBannerDetails , secondBanner , promotionBannerDetails , 
   lastpromotionBannerDetails , cartCount , couponBannerDetails , category ,
-   totalRate ,shiprate , oneBook});
+   totalRate ,shiprate , oneBook , wishlistCount});
 
   
 });
@@ -83,13 +87,30 @@ router.get ('/u-logout' , (req,res) => {
 
 // product details page
 
-router.get('/product-details/:id', (req , res) => {
+router.get('/product-details/:id',verifyLogin , async(req , res) => {
+
+  let cartCount = null
+  let totalRate = null
+  let shiprate
+  let onBook 
+  let oneBook
+  
+
+  if (req.session.user) {
+  cartCount = await productHelpers.getCartCount(req.session.user._id) 
+  shiprate = await productHelpers.findDeliveryRate() 
+  onBook = await productHelpers.getCartItem(req.session.user._id)
+  oneBook = onBook[0]
+  }
+ 
+  totalRate = cartCount * shiprate
 
   const id = req.params.id
 
   productHelpers.findOneProduct(id).then( (response) => { 
     const oneBook = response.oneBook
-    res.render('user/product-details', {user_partial : true , oneBook, user : req.session.user})
+    res.render('user/product-details', {user_partial : true , oneBook, user : req.session.user ,
+      shiprate , cartCount , totalRate })
   })
 })
 
@@ -124,6 +145,7 @@ router.get('/cart', verifyLogin , async(req,res) =>{
   let cartCount = await productHelpers.getCartCount(req.session.user._id)
   let onBook = await productHelpers.getCartItem(req.session.user._id)
   let oneBook = onBook[0]
+  console.log(oneBook , "from cart");
   let totalRate = cartCount * shiprate
    res.json({status:true , oneBook , totalRate ,shiprate , cartCount}) 
   })
@@ -133,6 +155,44 @@ router.get('/cart', verifyLogin , async(req,res) =>{
      res.json({status:true})
    })
  })
+
+//  wishlist
+
+router.get('/wishlist' , verifyLogin ,async (req,res) => {
+
+  let cartCount = null
+  let totalRate = null
+  let shiprate
+
+  
+
+  if (req.session.user) {
+  cartCount = await productHelpers.getCartCount(req.session.user._id) 
+  shiprate = await productHelpers.findDeliveryRate() 
+
+  }
+ 
+  totalRate = cartCount * shiprate
+
+  let onBook = await productHelpers.getWishItem(req.session.user._id)
+  let oneBook = onBook[0]
+
+  res.render('user/wishlist' , {user_partial : true , shiprate , oneBook , user : req.session.user  , cartCount , totalRate} )
+})
+
+router.get('/add-to-wishlist/:id'  , verifyLogin , async (req,res) => {
+  await productHelpers.addWishlist(req.params.id , req.session.user._id)  
+
+  let wishlistCount = await productHelpers.getWishlistCount(req.session.user._id)
+   res.json({status:true , wishlistCount }) 
+  })
+
+  router.post('/delete-wishlist-product', (req,res) => {
+    productHelpers.deleteWishlist(req.body.proId , req.session.user._id).then( (response) => {
+      res.json({status:true})
+    })
+  })
+
 
 
 
@@ -166,6 +226,9 @@ res.render('user/edit-profile' , {user_partial : true , user : req.session.user 
 
 router.get('/add-profile',verifyLogin, async(req,res) => {
 
+  const successMessage = req.session.successMessage
+  req.session.successMessage = null
+
   let cartCount = null
   let totalRate = null
   let shiprate
@@ -184,7 +247,7 @@ router.get('/add-profile',verifyLogin, async(req,res) => {
 
 
 
-res.render('user/add-profile' , {user_partial : true , user : req.session.user , cartCount , oneBook , totalRate})
+res.render('user/add-profile' , {user_partial : true , user : req.session.user , cartCount , oneBook , totalRate , successMessage})
 })
 
 
@@ -223,6 +286,8 @@ res.redirect('/checkout' )
 
 router.get('/user-profile',verifyLogin, async(req,res) => {
 
+  let address
+
   const errorMessage = req.session.errorMessage
   req.session.errorMessage = null
   const successMessage = req.session.successMessage
@@ -249,11 +314,19 @@ router.get('/user-profile',verifyLogin, async(req,res) => {
     await productHelpers.getUserAddress(req.session.user._id).then( (response) => {
       address = response
     })
+
+    if (address) {
+      res.render('user/user-profile' , {user_partial : true , user : req.session.user , cartCount , totalRate ,
+        errorMessage , successMessage ,oneBook , address})
+    }
+    else {
+      req.session.successMessage = "Please Add Your Address, You Haven't Added  Yet"
+      res.redirect ('/add-profile')
+    }
     
    
 
-res.render('user/user-profile' , {user_partial : true , user : req.session.user , cartCount , totalRate ,
-   errorMessage , successMessage ,oneBook , address})
+
 })
 
 // delete address
@@ -315,13 +388,15 @@ router.get('/place-order',verifyLogin, async(req,res) => {
   const user = await productHelpers.getUser(req.session.user._id)
   const userId = user._id
   let rent = false
+  const errorMessage = req.session.errorMessage 
+  req.session.errorMessage = null
   await productHelpers.destroyCart(userId)
    .then( (response) => {
      if(response.status) {
        rent = true
      }
    })
-  res.render('user/place-order', { user : req.session.user , user_partial : true , rent })
+  res.render('user/place-order', { user : req.session.user , errorMessage ,  user_partial : true  , rent})
 })
 
 
@@ -331,12 +406,20 @@ router.get('/view-order',verifyLogin , async (req,res) => {
   const succesMessage = req.session.succesMessage
   req.session.succesMessage = null
  const orders = await productHelpers.userOrderDetails(req.session.user._id)
+ let isActive = "Pending"
+
+ if (orders[0].status == "Placed") {
+   isActive = true
+ }
+
+ console.log(orders[0].status , "djfdfdhfufhdfhdfu");
+
 
 
  for( x of orders) {
    x.date = moment (x.date).format("ll")
  }
-    res.render('user/view-order',{user : req.session.user , succesMessage ,  user_partial : true  , orders})
+    res.render('user/view-order',{user : req.session.user , isActive , succesMessage ,  user_partial : true  , orders})
 
   })
 
@@ -457,19 +540,42 @@ router.get('/view-order',verifyLogin , async (req,res) => {
   })
 
   // Subscription Plans
-
+ 
   router.get('/subscription', verifyLogin , async(req,res) => {
+
+    let cartCount = null
+    let totalRate = null
+    let shiprate
+    let onBook 
+    let oneBook
+    
+  
+    if (req.session.user) {
+    cartCount = await productHelpers.getCartCount(req.session.user._id) 
+    shiprate = await productHelpers.findDeliveryRate() 
+    onBook = await productHelpers.getCartItem(req.session.user._id)
+    oneBook = onBook[0]
+    }
+   
+    totalRate = cartCount * shiprate
+
     const subscription_plans = await productHelpers.findPlans()
-    res.render('user/subscription' , {user_partial : true , subscription_plans , user : req.session.user})
+    res.render('user/subscription' , {user_partial : true , subscription_plans , user : req.session.user ,
+      oneBook , totalRate , cartCount , shiprate })
   })
 
   router.post('/subscription', verifyLogin ,async(req,res) => {
 
+    // console.log(req.body , "body from subscription");
+  
    
-    const plan = await productHelpers.findOnePlan(req.body)
+    const plan = await productHelpers.findOnePlanForCheckout(req.body)
+
+
     req.session.rate = req.body.subscription_rate
     req.session.plan = plan.planTitle 
 
+  
     res.redirect('/checkout-subscription')
   })
 
@@ -477,6 +583,27 @@ router.get('/view-order',verifyLogin , async (req,res) => {
   //  checkout page
 
 router.get('/checkout', verifyLogin , async(req,res) => {
+
+  let address
+
+  const specified_plan = await productHelpers.findFirstUserPlans(req.session.user._id)
+  let maxCount = parseInt (specified_plan.maxCountBooks)
+  const order = await productHelpers.userOrderDetails(req.session.user._id)
+  cartCount = await productHelpers.getCartCount(req.session.user._id) 
+  let count = 0
+  for(let x = 0; x < order.length; x++) {
+    if (order[x].status == "Cancelled") {
+    }
+    else {
+      count = count + 1
+    }
+  }
+req.session.rentCount = count
+
+let trueCount = count + cartCount
+
+if ( maxCount > trueCount || maxCount == trueCount ) {
+
   
   let cartCount = null
   let totalRate = null
@@ -506,20 +633,31 @@ router.get('/checkout', verifyLogin , async(req,res) => {
     await productHelpers.getUserAddress(req.session.user._id).then( (response) => {
       address = response
     })
+
+    // if (!address) {
+    //   res.redirect ('/add-profile')
+    // }
+ 
   
   if (totalRate === 0) {
     errorMessage = "You haven't place any order"
   }
 
- 
+  res.render('user/checkout', {user_partial : true , cartCount  , errorMessage ,user_details ,
+     successMessage ,totalRate ,oneBook , shiprate , address  , user : req.session.user} )
 
-  res.render('user/checkout', {user_partial : true , cartCount , errorMessage ,user_details ,
-     successMessage ,totalRate ,oneBook , shiprate , address , user : req.session.user} )
+  }
+
+  else  {
+    res.redirect('/cart')
+  }
+
 })
 
 
 
 router.post('/checkout',verifyLogin, async(req,res) => {
+
 
   let shiprate = await productHelpers.findDeliveryRate()
 
@@ -542,16 +680,19 @@ router.post('/checkout',verifyLogin, async(req,res) => {
     })
   }
   totalRate = cartCount * shiprate
+
+  const user = await productHelpers.getUser(req.session.user._id)
+    const plan = user.plan
   
   
-  await productHelpers.checkOut(req.body , req.session.user._id , deliveryAddress , oneBook , totalRate ,shiprate, bookId ,cartCount).then( (placeId) => {
+  await productHelpers.checkOut(req.body , plan , req.session.user._id , deliveryAddress , oneBook , totalRate ,shiprate, bookId ,cartCount).then( (placeId) => {
     req.session.successMessage = placeId.successMessage
     req.session.errorMessage = placeId.errorMessage 
     
     const id = placeId.id 
     
     if (req.body['payment'] === 'COD') {
-      res.json({COD_Success : true})
+      res.json({COD_Success : true })
     }
     else if (req.body['payment'] === 'RazorPay') {
       productHelpers.generateRazorpay(id , totalRate).then( (response)=> {
@@ -566,13 +707,15 @@ router.post('/checkout',verifyLogin, async(req,res) => {
     }
 
   })
+
+
+
+
 })
 
 // verify payment razorpay
 
 router.post('/verify-payment',async (req,res) => {
-  
-  console.log(req.body , " body from verify-payment");
 
 
   await productHelpers.verifyPayment(req.body).then( (response) => {
@@ -664,19 +807,52 @@ router.get('/cancel', (req, res) => res.send('Cancelled'));
   // Check out page for subscription
 
   router.get('/checkout-subscription',verifyLogin , async(req,res) => {
+
+    let cartCount = null
+    let totalRate = null
+    let shiprate
+    let onBook 
+    let oneBook
+    
+  
+    if (req.session.user) {
+    cartCount = await productHelpers.getCartCount(req.session.user._id) 
+    shiprate = await productHelpers.findDeliveryRate() 
+    onBook = await productHelpers.getCartItem(req.session.user._id)
+    oneBook = onBook[0]
+    }
+   
+    totalRate = cartCount * shiprate
+
+    
     const subscription_rate = req.session.rate
-   
     const subscription_plan = req.session.plan
+    const discountedRate = req.session.discountedRate
+    // req.session.discountedRate = null
+    const finalAmount = req.session.finalAmount
+    // req.session.finalAmount = null
+    const errorMessage = req.session.errorMessage 
+    req.session.errorMessage = null
    
-    res.render('user/checkout-subscription', {user_partial : true , subscription_rate , subscription_plan , user : req.session.user})
+    res.render('user/checkout-subscription', {user_partial : true , errorMessage , subscription_rate , shiprate ,
+      finalAmount, discountedRate ,  subscription_plan , oneBook , totalRate  , cartCount ,user : req.session.user})
   })
 
   router.post('/checkout-subscription', verifyLogin , async(req,res) => {
 
+    console.log("fddddddddddfffffffffffff");
+
+    console.log(req.body , "req.body from checkout subscription page");
+
+    await productHelpers.addCouponUser(req.session.user._id , req.body.coupon) 
+
+
+
+
     const subscription_rate = req.session.rate
-    req.session.rate = null
+   
     const subscription_plan = req.session.plan
-    req.session.plan = null
+
     let validity = null
     let yearly_rate = null
     
@@ -694,16 +870,19 @@ router.get('/cancel', (req, res) => res.send('Cancelled'));
           console.log("value not found");
       }
   })
+  
+    const userState = await productHelpers.getUser(req.session.user._id)  
+    const state = userState.user_state
+  
 
-    console.log(req.body , "body from check out post method");
-
-
-    const orderId = await productHelpers.checkOut_subscription(req.session.user._id  , req.body , subscription_rate , subscription_plan , validity)
+    const orderId = await productHelpers
+    .checkOut_subscription(req.session.user._id  , req.body , subscription_rate , subscription_plan , validity , state)
     
+   
+    const msg = await productHelpers.updatePlanForUser(orderId , req.session.user._id)
    
       if (req.body.payment == 'RazorPay') {
           await productHelpers.generateRazorPayForPlan(orderId , subscription_rate).then( (response) => {
-            console.log(response , "response from check out post");
             response.status = true
           res.json(response)
           })
@@ -711,6 +890,8 @@ router.get('/cancel', (req, res) => res.send('Cancelled'));
     if ( req.body.payment == 'PayPal' ) {
       res.json({response : false})
     }
+
+  
      
   
   
@@ -721,10 +902,12 @@ router.get('/cancel', (req, res) => res.send('Cancelled'));
 
 router.post('/verify-payment-subsciption',async (req,res) => {
 
+  
 
-  await productHelpers.verifyPaymentSubscription(req.body).then( (response) => {
+
+  await productHelpers.verifyPaymentSubscription(req.body).then( async(response) => {
  
-    productHelpers.changePaymentStatusForSubscription(req.body['order[receipt]']).then( (response) => {
+    await productHelpers.changePaymentStatusForSubscription(req.body['order[receipt]'] , req.session.user._id).then( (response) => {
       
       res.json({status : true})
     })
@@ -739,12 +922,245 @@ router.post('/verify-payment-subsciption',async (req,res) => {
 
 // contact form
 
-router.get('/contact', verifyLogin , (req,res) => {
-  res.render('user/contact', {user_partial : true , user : req.session.user})
+router.get('/contact', verifyLogin , async (req,res) => {
+
+  let cartCount = null
+  let totalRate = null
+  let shiprate
+  let onBook 
+  let oneBook
+  
+
+  if (req.session.user) {
+  cartCount = await productHelpers.getCartCount(req.session.user._id) 
+  shiprate = await productHelpers.findDeliveryRate() 
+  onBook = await productHelpers.getCartItem(req.session.user._id)
+  oneBook = onBook[0]
+  }
+ 
+  totalRate = cartCount * shiprate
+
+  res.render('user/contact', {user_partial : true , user : req.session.user , oneBook , totalRate ,shiprate ,cartCount})
 })
 
+// searched_contents Page for index
+
+router.post('/searched-contents', verifyLogin , async (req,res) => {
+
+  const searchedProducts =  await productHelpers.viewProductUsingRegex(req.body.search_key_word)
+  console.log(searchedProducts , "abc from contact");
+  res.render('user/searched_contents', {user_partial : true  , searchedProducts , user : req.session.user ,
+    oneBook , totalRate , cartCount , shiprate })
+})
+
+// coupons
+
+router.get ('/coupon-view',verifyLogin,async (req,res) => {
+
+  let cartCount = null
+  let totalRate = null
+  let shiprate
+  let onBook 
+  let oneBook
+  
+
+  if (req.session.user) {
+  cartCount = await productHelpers.getCartCount(req.session.user._id) 
+  shiprate = await productHelpers.findDeliveryRate() 
+  onBook = await productHelpers.getCartItem(req.session.user._id)
+  oneBook = onBook[0]
+  }
+ 
+  totalRate = cartCount * shiprate
+
+  const successMessage = req.session.successMessage
+  req.session.successMessage = null
+  const coupon = await productHelpers.findCoupon()
+  const planTitle = req.session.planTitle
+  for( x of coupon) {
+    x.validity = moment (x.validity).format("ll")
+  }
+
+  res.render('user/coupon-view' , {successMessage ,user_partial : true , user : req.session.user ,
+    oneBook , totalRate , cartCount , shiprate ,  planTitle , coupon})
+})
+
+// getting  offer coupon from database
+
+  router.post ('/gettingCoupon', async (req,res) => {
+   
+    console.log(req.body , "body from post coupon");
+
+    let coupon = await productHelpers.findCouponinUser( req.session.user._id , req.body.givenCode)
+      
+      
+      await productHelpers.findCouponUsingCode(req.body.givenCode).then ( (response) => {
+        console.log(response , "respoonse");
+        let code = req.body.givenCode
+        let offPercentage = null
+        let discountedRate = 0
+        let finalAmount = 0 
+        let msg = "Wrong Coupon Code"
+        let newGivenRate = req.body.newGivenRate
+  
+        
+  
+        if (response.status) { 
+          
+          let rateFromBackEnd = parseFloat(response.coupon.off_percentage)
+          discountedRate = rateFromBackEnd * newGivenRate / 100;
+          finalAmount = newGivenRate - discountedRate;
+          
+          req.session.discountedRate = discountedRate
+          req.session.finalAmount = finalAmount
+  
+        res.json({code,discountedRate,finalAmount,coupon,status:true})
+         
+        }
+        else{  
+          res.json({status : false , newGivenRate})
+      }
+  
+      })
+
+  })
+
+  // subscription orders
+
+  router.get('/subscription_order' , verifyLogin , async (req,res) => {
+
+    let cartCount = null
+    let totalRate = null
+    let shiprate
+    let onBook 
+    let oneBook
+    
+  
+    if (req.session.user) {
+    cartCount = await productHelpers.getCartCount(req.session.user._id) 
+    shiprate = await productHelpers.findDeliveryRate() 
+    onBook = await productHelpers.getCartItem(req.session.user._id)
+    oneBook = onBook[0]
+    }
+   
+    totalRate = cartCount * shiprate
+
+
+    let fine 
+    let fineAmountForOneDay
+    let fineAmount
+
+    const errorMessage = req.session.errorMessage
+    
+    
+    
+    let returnBook = await productHelpers.findMatchedReturnBook(req.session.user._id)
+
+
+
+
+    if (returnBook) {
+     
+
+
+
+for ( let x = 0; x < returnBook.length; x++ ) {
+   let date = new Date (returnBook[x].returnDate) - new Date (returnBook[x].planEndDate)
+   
+   fine = parseInt ((date * returnBook[x].fineAmountForOneDay) / (1000 * 60 * 60 * 24))
+}
+
+if (fine > 0) {
+  fineAmount = returnBook
+}
+
+        for( let x of returnBook) {
+            x.date = moment (x.date).format("ll")
+            x.planEndDate = moment (x.planEndDate).format("ll")
+        }
+      }
+
+
+
+    
+
+    const succesMessage = req.session.succesMessage
+    req.session.succesMessage = null
+    const orders = await productHelpers.userOrderDetails(req.session.user._id)
 
   
+
+   for( x of orders) {
+     x.date = moment (x.date).format("ll")
+   }
+
+    const specified_plan = await productHelpers.findFirstUserPlans(req.session.user._id)
+    let maxCount = parseInt (specified_plan.maxCountBooks)
+    const order = await productHelpers.userOrderDetails(req.session.user._id)
+
+    let count = 0
+    for(let x = 0; x < order.length; x++) {
+      if (order[x].status == "Cancelled") {
+
+      }
+      else {
+        count = count + 1
+      }
+    }
+
+   
+
+
+    let remainingCount = maxCount - count
+  
+    res.render('user/subscription_order' , {specified_plan  , fineAmount , errorMessage , orders , 
+      succesMessage , remainingCount , count , user : req.session.user , fine , user_partial : true ,
+      oneBook , totalRate , cartCount , shiprate })
+  })
+
+
+  router.get ('/checkout-fetch' , verifyLogin , async (req,res) => {
+
+    const specified_plan = await productHelpers.findFirstUserPlans(req.session.user._id)
+    let maxCount = parseInt (specified_plan.maxCountBooks)
+    const order = await productHelpers.userOrderDetails(req.session.user._id)
+    cartCount = await productHelpers.getCartCount(req.session.user._id) 
+    let count = 0
+    for(let x = 0; x < order.length; x++) {
+      if (order[x].status == "Cancelled") {
+      }
+      else {
+        count = count + 1
+      }
+    }
+  
+  let trueCount = count + cartCount
+
+    res.json({trueCount , maxCount})
+  })
+
+  // return order
+
+  router.get('/return-order/:bookId/:userId/:status', verifyLogin, async (req,res) => {
+
+    let bookId = req.params.bookId
+    let userId = req.params.userId
+    let status = req.params.status
+
+    const one = await productHelpers.returnOrdrByUser( bookId , userId )
+    const oneOrder = one.order
+    const oneBook = one.book
+    one.errorMessage = req.session.errorMessage
+
+
+ 
+      await productHelpers.returnBooks(oneOrder.book ,  
+      oneOrder.userOriginalId , oneBook[0]._id, oneOrder.date ,
+       oneOrder.plan , userId , oneBook[0].fine.fine_amount)
+    
+    
+    res.redirect('/subscription_order')
+  })
 
 
 module.exports = router;

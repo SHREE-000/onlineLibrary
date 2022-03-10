@@ -3,13 +3,15 @@
 
 
                 <!-- Begin Page Content -->
-                <div class="container-fluid">
+                <div class="container-fluid " id="tblData">
 
                     <!-- Page Heading -->
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
-                        <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i
-                                class="fas fa-download fa-sm text-white-50"></i> Generate Report</a>
+                        {{!-- <button class="btn btn-info" id="data-print" onclick="return print()">Download As PDF</button> --}}
+                        <button class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"
+                        onclick="return print()"><i
+                        class="fas fa-download fa-sm text-white-50"></i> Generate Report</button>
                     </div>
 
                     <!-- Content Row -->
@@ -22,8 +24,8 @@
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
                                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                                Earnings (Monthly)</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">$40,000</div>
+                                                Average Earnings (Monthly)</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">&nbsp ₹ {{monthyAverage}}</div>
                                         </div>
                                         <div class="col-auto">
                                             <i class="fas fa-calendar fa-2x text-gray-300"></i>
@@ -41,7 +43,7 @@
                                         <div class="col mr-2">
                                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                                 Earnings (Annual)</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">$215,000</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">&nbsp ₹ {{sum}}</div>
                                         </div>
                                         <div class="col-auto">
                                             <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
@@ -52,23 +54,20 @@
                         </div>
 
                         <!-- Earnings (Monthly) Card Example -->
+                       
                         <div class="col-xl-3 col-md-6 mb-4">
                             <div class="card border-left-info shadow h-100 py-2">
                                 <div class="card-body">
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tasks
-                                            </div>
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                Active Subscriptions</div>
                                             <div class="row no-gutters align-items-center">
                                                 <div class="col-auto">
-                                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">50%</div>
+                                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800"> &nbsp &nbsp&nbsp ₹ {{numberOfCurrentSubscriptions}}</div>
                                                 </div>
                                                 <div class="col">
-                                                    <div class="progress progress-sm mr-2">
-                                                        <div class="progress-bar bg-info" role="progressbar"
-                                                            style="width: 50%" aria-valuenow="50" aria-valuemin="0"
-                                                            aria-valuemax="100"></div>
-                                                    </div>
+                                                    
                                                 </div>
                                             </div>
                                         </div>
@@ -87,8 +86,8 @@
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
                                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                                Pending Requests</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
+                                                Total Subscriptions</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800"> &nbsp ₹ {{numberOfTotalSubscription}}</div>
                                         </div>
                                         <div class="col-auto">
                                             <i class="fas fa-comments fa-2x text-gray-300"></i>
@@ -110,7 +109,8 @@
                                 <div
                                     class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                                     <h6 class="m-0 font-weight-bold text-primary">Earnings Overview</h6>
-                                    <div class="dropdown no-arrow">
+
+                                    {{!-- <div class="dropdown no-arrow">
                                         <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
                                             data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                             <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
@@ -123,7 +123,8 @@
                                             <div class="dropdown-divider"></div>
                                             <a class="dropdown-item" href="#">Something else here</a>
                                         </div>
-                                    </div>
+                                    </div> --}}
+
                                 </div>
                                 <!-- Card Body -->
                                 <div class="card-body">
@@ -161,17 +162,14 @@
                                     <div class="chart-pie pt-4 pb-2">
                                         <canvas id="myPieChart"></canvas>
                                     </div>
+
+                                    {{#each userState}}
                                     <div class="mt-4 text-center small">
                                         <span class="mr-2">
-                                            <i class="fas fa-circle text-primary"></i> Direct
-                                        </span>
-                                        <span class="mr-2">
-                                            <i class="fas fa-circle text-success"></i> Social
-                                        </span>
-                                        <span class="mr-2">
-                                            <i class="fas fa-circle text-info"></i> Referral
-                                        </span>
+                                            <i class="fas fa-circle text-primary"></i> {{this._id}}
+                                        </span> 
                                     </div>
+                                    {{/each}}
                                 </div>
                             </div>
                         </div>
@@ -186,16 +184,25 @@
                             <!-- Project Card Example -->
                             <div class="card shadow mb-4">
                                 <div class="card-header py-3">
-                                    <h6 class="m-0 font-weight-bold text-primary">Projects</h6>
+                                    <h6 class="m-0 font-weight-bold text-primary">Number Of Subscription Distribution</h6>
                                 </div>
                                 <div class="card-body">
-                                    <h4 class="small font-weight-bold">Server Migration <span
-                                            class="float-right">20%</span></h4>
+
+                                    {{!-- <input type="text" class="count" value="{{countOfState}}" hidden> 
+                                    <input type="text" class="sum" value="{{sumOfSubscription}}" hidden> --}}
+
+                                    {{#each userState}}
+                                   
+                                    <h4 class="small font-weight-bold">{{this._id}} <span
+                                    
+                                            class="float-right userState" id="countState"></span></h4>    
                                     <div class="progress mb-4">
-                                        <div class="progress-bar bg-danger" role="progressbar" style="width: 20%"
+                                        <div class="progress-bar bg-danger" id="sumState" role="progressbar" style="width: 50%;"
                                             aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
-                                    <h4 class="small font-weight-bold">Sales Tracking <span
+                                    {{/each}}
+                                   
+                                    {{!-- <h4 class="small font-weight-bold">Sales Tracking <span
                                             class="float-right">40%</span></h4>
                                     <div class="progress mb-4">
                                         <div class="progress-bar bg-warning" role="progressbar" style="width: 40%"
@@ -218,13 +225,14 @@
                                     <div class="progress">
                                         <div class="progress-bar bg-success" role="progressbar" style="width: 100%"
                                             aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
+                                    </div> --}}
                                 </div>
                             </div>
 
                             <!-- Color System -->
-                            <div class="row">
-                                <div class="col-lg-6 mb-4">
+
+                            {{!-- <div class="row">
+                                <div cl/checkoutass="col-lg-6 mb-4">
                                     <div class="card bg-primary text-white shadow">
                                         <div class="card-body">
                                             Primary
@@ -288,11 +296,47 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </div> --}}
 
                         </div>
 
+
+
+
                         <div class="col-lg-6 mb-4">
+
+                            <!-- Project Card Example -->
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Amount Of Subscription Distribution</h6>
+                                </div>
+                                <div class="card-body">
+
+                                    
+
+                                    {{#each userState}}
+                                   
+                                    <h4 class="small font-weight-bold">{{this._id}} <span
+                                    
+                                    class="userAmount float-right"></span></h4>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar widthOfBar bg-warning" role="progressbar" style="width: 40%"
+                                            aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    {{/each}}
+                                   
+                                    
+                                </div>
+                            </div>
+
+                          
+
+                        </div>
+
+
+
+
+                        {{!-- <div class="col-lg-6 mb-4">
 
                             <!-- Illustrations -->
                             <div class="card shadow mb-4">
@@ -327,7 +371,7 @@
                                 </div>
                             </div>
 
-                        </div>
+                        </div> --}}
                     </div>
 
                 </div>
