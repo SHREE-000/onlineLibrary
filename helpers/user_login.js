@@ -24,20 +24,20 @@ doUserLogin : (userdata) => {
             return resolve (response)   
         }else {
 
-            const emailUser = db.get().collection(collection.USER_COLLECTION).findOne( {user_email : userdata.user_email} )
+            const emailUser = await db.get().collection(collection.USER_COLLECTION).findOne( {user_email : userdata.user_email} )
 
             if (!emailUser) {
                 return resolve({errorMessage : "Invalid Email" , status : false})
             }
 
 
-            const passwordUser = db.get().collection(collection.USER_COLLECTION).findOne( {user_password : userdata.user_password})
+            const passwordUser = await db.get().collection(collection.USER_COLLECTION).findOne( {user_password : userdata.user_password})
 
             if (!passwordUser) {
                 return resolve ( {errorMessage : "Invalid Password", status : false})
             }
 
-            const disableUser = db.get().collection(collection.USER_COLLECTION).findOne ( {user_email : userdata.user_email , user_password : userdata.user_password} )
+            const disableUser = await db.get().collection(collection.USER_COLLECTION).findOne ( {user_email : userdata.user_email , user_password : userdata.user_password} )
 
             if (!disableUser) {
                 return resolve ( {errorMessage : "Your Account Has Been Blocked", status : false} )

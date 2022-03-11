@@ -28,9 +28,6 @@ doUserSignup : (userdata) => {
         }
 
        
-
-        // userdata.isActive = true
-
         else {
             db.get().collection(collection.USER_COLLECTION).insertOne(userdata).then ( (response) => {
                 db.get().collection(collection.USER_COLLECTION).updateOne(
@@ -55,5 +52,4 @@ doUserSignup : (userdata) => {
     })
 }
 
-// 7025464177
 }

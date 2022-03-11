@@ -22,24 +22,19 @@ doAdminLogin : (adminData) => {
             return resolve (response)   
         }else {
 
-            const emailUser = db.get().collection(collection.ADMIN_COLLECTION).findOne( {admin_email : adminData.admin_email} )
+            const emailUser = await db.get().collection(collection.ADMIN_COLLECTION).findOne( {admin_email : adminData.admin_email} )
 
             if (!emailUser) {
                 return resolve({errorMessage : "Invalid Email" , status : false})
             }
 
 
-            const passwordUser = db.get().collection(collection.ADMIN_COLLECTION).findOne( {admin_password : adminData.admin_password})
+            const passwordUser = await db.get().collection(collection.ADMIN_COLLECTION).findOne( {admin_password : adminData.admin_password})
 
             if (!passwordUser) {
                 return resolve ( {errorMessage : "Invalid Password", status : false})
             }
 
-            // const Blocked = db.get().collection(collection.ADMIN_COLLECTION).findOne ( {admin_email : adminData.admin_email , admin_password : adminData.admin_password} )
-
-            // if (!Blocked) {
-            //     return resolve ( {errorMessage : "Your Account Has Been Blocked", status : false} )
-            // }
 
             return resolve ( {errorMessage : "User Not Found", status : false})
         }

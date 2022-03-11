@@ -60,6 +60,11 @@ router.post('/delete-category',async (req,res) => {
   
   // add , find , delete sub-category
 
+  router.get('/sub-category-json' , async (req,res) => {
+    let findCategory = await adminCategoryHelpers.findCategory() 
+      res.json()
+  })
+
 router.get ('/sub-category', verifyLogin , async (req , res) => {
 
  
@@ -651,6 +656,7 @@ router.get('/user-view/unblock_user/:id' , verifyLogin , async(req,res) => {
 router.get('/order-view' , verifyLogin , async(req,res) => {
 
     const orders = await adminCategoryHelpers.alluserOrderDetails()
+    console.log(orders , "ddddddddddddddddddddddddddddddddd");
     for( x of orders) {
         x.date = moment (x.date).format("ll")
       }

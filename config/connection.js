@@ -1,22 +1,32 @@
-const MondoClient = require('mongodb').MongoClient
+
+const mongoclient = require('mongodb').MongoClient
+require('dotenv').config();
+// const { MongoClient } = require("mongodb").MongoClient;
 const state = {
-    db:null
+    db: null
 }
+const pass = process.env.PASSWORD_DB
+const dbname = process.env.DB_NAME
+module.exports.connect = function (done) {
 
-module.exports.connect = (callback) => {
-    const url = 'mongodb://localhost:27017'
-    const dbname = 'library_db'
+    const url = `mongodb+srv://shreehari:${pass}@cluster0.ezi4j.mongodb.net/${dbname}?retryWrites=true&w=majority`
 
-    MondoClient.connect(url, {useUnifiedTopology: true} ,(err, data) => {
-        if (err) {
-            return callback(err)
-        }
+    // const url = `mongodb+srv://mahroofali:${pass}@cluster0.omtn0.mongodb.net/${dbname}?retryWrites=true&w=majority`
+ 
+ 
+    //create connection
+    mongoclient.connect(url, { useUnifiedTopology: true }, (err, data) => {
+        if (err)
+            return done(err)
         state.db = data.db(dbname)
-        callback()
-
+        done()
     })
 }
-
-module.exports.get = () => {
+module.exports.get = function () {
     return state.db
 }
+
+
+
+
+

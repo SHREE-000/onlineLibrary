@@ -23,8 +23,6 @@ doUserOtp : (userdata) => {
             return resolve ({status : false , errorMessage : "Email Id Already Exists"})
         }
 
-        // return resolve ({status : false , errorMessage : "Invalid OTP"})
-
         userdata.isActive = true
         db.get().collection(collection.USER_COLLECTION).insertOne(userdata).then( (data) => {
             db.get().collection(collection.USER_COLLECTION).findOne({ _id : data.insertedId}).then((user) =>{

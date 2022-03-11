@@ -399,6 +399,30 @@ router.get('/place-order',verifyLogin, async(req,res) => {
   res.render('user/place-order', { user : req.session.user , errorMessage ,  user_partial : true  , rent})
 })
 
+// place order for subscription
+
+router.get('/place-order-subscription' , verifyLogin , async (req,res)=> {
+
+  let cartCount = null
+  let totalRate = null
+  let shiprate
+  let onBook 
+  let oneBook
+  
+
+  if (req.session.user) {
+  cartCount = await productHelpers.getCartCount(req.session.user._id) 
+  shiprate = await productHelpers.findDeliveryRate() 
+  onBook = await productHelpers.getCartItem(req.session.user._id)
+  oneBook = onBook[0]
+  }
+ 
+  totalRate = cartCount * shiprate
+
+  res.render('user/place-order-subscription' , {user_partial : true , user : req.session.user ,
+     oneBook , totalRate , shiprate , cartCount})
+})
+
 
 // view orders
 
@@ -408,12 +432,10 @@ router.get('/view-order',verifyLogin , async (req,res) => {
  const orders = await productHelpers.userOrderDetails(req.session.user._id)
  let isActive = "Pending"
 
+
  if (orders[0].status == "Placed") {
    isActive = true
  }
-
- console.log(orders[0].status , "djfdfdhfufhdfhdfu");
-
 
 
  for( x of orders) {
@@ -795,7 +817,7 @@ router.get('/success', (req, res) => {
         throw error;
     } else {
         console.log(JSON.stringify(payment));
-        res.redirect('/place-order');
+        res.redirect('/place-order-subscription');
     }
 });
 });
@@ -840,9 +862,6 @@ router.get('/cancel', (req, res) => res.send('Cancelled'));
 
   router.post('/checkout-subscription', verifyLogin , async(req,res) => {
 
-    console.log("fddddddddddfffffffffffff");
-
-    console.log(req.body , "req.body from checkout subscription page");
 
     await productHelpers.addCouponUser(req.session.user._id , req.body.coupon) 
 
@@ -988,12 +1007,10 @@ router.get ('/coupon-view',verifyLogin,async (req,res) => {
 // getting  offer coupon from database
 
   router.post ('/gettingCoupon', async (req,res) => {
-   
-    console.log(req.body , "body from post coupon");
 
-    let coupon = await productHelpers.findCouponinUser( req.session.user._id , req.body.givenCode)
-      
-      
+    
+
+    let coupon = await productHelpers.findCouponinUser( req.session.user._id , req.body.givenCode) 
       await productHelpers.findCouponUsingCode(req.body.givenCode).then ( (response) => {
         console.log(response , "respoonse");
         let code = req.body.givenCode
@@ -1002,8 +1019,6 @@ router.get ('/coupon-view',verifyLogin,async (req,res) => {
         let finalAmount = 0 
         let msg = "Wrong Coupon Code"
         let newGivenRate = req.body.newGivenRate
-  
-        
   
         if (response.status) { 
           
@@ -1121,22 +1136,32 @@ if (fine > 0) {
 
   router.get ('/checkout-fetch' , verifyLogin , async (req,res) => {
 
-    const specified_plan = await productHelpers.findFirstUserPlans(req.session.user._id)
-    let maxCount = parseInt (specified_plan.maxCountBooks)
-    const order = await productHelpers.userOrderDetails(req.session.user._id)
-    cartCount = await productHelpers.getCartCount(req.session.user._id) 
-    let count = 0
-    for(let x = 0; x < order.length; x++) {
-      if (order[x].status == "Cancelled") {
-      }
-      else {
-        count = count + 1
-      }
-    }
-  
-  let trueCount = count + cartCount
+    let maxCount
+    let trueCount
 
+    const specified_plan = await productHelpers.findFirstUserPlans(req.session.user._id)
+    if (specified_plan.nill_plan) {
+      maxCount = 0
+    }
+    else {
+      
+      maxCount = parseInt (specified_plan.maxCountBooks)
+      const order = await productHelpers.userOrderDetails(req.session.user._id)
+      cartCount = await productHelpers.getCartCount(req.session.user._id) 
+      let count = 0
+      for(let x = 0; x < order.length; x++) {
+        if (order[x].status == "Cancelled") {
+        }
+        else {
+          count = count + 1
+        }
+      }
+    
+    trueCount = count + cartCount
+  
+    }
     res.json({trueCount , maxCount})
+
   })
 
   // return order

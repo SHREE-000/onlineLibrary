@@ -79,7 +79,7 @@
 
  <div class="d-flex justify-content-center align-items-center">
                     <select name="book_category" id="categorys" size="1" class="custom-select p-2 mb-5"
-                    onchange="makeSubCategory(this.value)" style="width : 50%">
+                    onchange="getSubCatogory(this.value)" style="width : 50%">
                       <option value="" selected>Choose a Category</option>
                       <p id="categoryone" class="text text-danger"></p>
                       {{#each category}}                   
@@ -92,11 +92,11 @@
  <div class="d-flex justify-content-center align-items-center">
                     <select name="book_sub_category" id="subcategorys" size="1" class="custom-select p-2" style="width : 50%">
                       <option value=""  selected>Choose a Sub Category</option>
-                      {{!-- <p id="categoryone" class="text text-danger"></p> --}}
-                      {{#each category }}
+                      <p id="categoryone" class="text text-danger"></p>
+                      {{!-- {{#each category }}
                       <option class="text-dark" value="{{this.book_sub_category}}">{{this.book_sub_category}}</option>
                       {{/each}}
-                       <p id="categoryone" class="text text-danger"></p>
+                       <p id="categoryone" class="text text-danger"></p> --}}
                     </select>
                     </div> 
                  

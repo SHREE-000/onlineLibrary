@@ -501,13 +501,27 @@ function verifyPayment(payment,order) {
       date_input.datepicker(options);
     })
 
+            //   category and sub-category
+
+            async function getSubCatogory(category) {
+                document.getElementById("subcategorys").innerHTML = "<option></option>";
+                const response = await fetch("http://localhost:3000/a-product/get-subcategory/"+category)
+                let subcategory = await response.json()
+                    for (x of subcategory) {
+                        document.getElementById("subcategorys").innerHTML += "<option>" + x + "</option>";
+                    }
+            }
+
     // for category and sub category menu
 
     function makeSubCategory(value) {
+
+
+        
         if (value.length == 0) document.getElementById("subcategorys").innerHTML = "<option></option>";
         else {
             var tempValue = "";
-            for (x in total_category[value]) {
+            for (x in subcategory[value]) {
                 tempValue += "<option>" + subcategory[value][x] + "</option>";
             }
             document.getElementById("subcategorys").innerHTML = tempValue;
@@ -585,16 +599,7 @@ function verifyPayment(payment,order) {
             
           }
 
-        //   category and sub-category
 
-        async function getSubCatogory(category) {
-            document.getElementById("subcategorys").innerHTML = "<option></option>";
-            const response = await fetch("http://localhost:3000/a-product/get-subcategory/"+category)
-            let subcategory = await response.json()
-                for (x of subcategory) {
-                    document.getElementById("subcategorys").innerHTML += "<option>" + x + "</option>";
-                }
-        }
 
 // for checkout and payment for subscription
 
@@ -697,7 +702,7 @@ function verifyPaymentSubscription(payment , order) {
         method : 'post' ,
         success : (response) => {
             if (response.status) {
-                location.href='/place-order'
+                location.href='/place-order-subscription'
                 
             }
             else {
@@ -746,7 +751,9 @@ function couponCode() {
             },
             method : 'post' ,
             success : (response) => {
-                console.log(response.coupon , "alert from couponCode")
+                
+                // if (response)
+                
 
                 if (response.status) {
 

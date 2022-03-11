@@ -44,16 +44,39 @@ findCategory : () => {
 
         const category = await db.get().collection(collection.ADMIN_CATEGORY_COLLECTION).find().toArray() 
 
+        if (category) {
             return resolve ( {status : true , category } )
+        }
+        else {
+            resolve()
+        }
+
         
     
     })
 } ,
 
+// findSubCategoryJson : () => {
+//     return new Promise (async (resolve , reject) => {
+
+//         const category = await db.get().collection(collection.ADMIN_CATEGORY_COLLECTION).find().toArray() 
+
+        
+
+        
+    
+//     })
+// } ,
+
 findSubCategory : (data) => {
     return new Promise (async (resolve , reject) => {
         const subCategory = await db.get().collection(collection.ADMIN_CATEGORY_COLLECTION).find({category : data}).project({_id:0,book_sub_category : 1}).toArray()
-        resolve(subCategory[0].book_sub_category)
+        if (subCategory) {
+            resolve(subCategory[0].book_sub_category)
+        }
+        else {
+            resolve ()
+        }
     })
 },
 
@@ -84,15 +107,32 @@ doAdminSubCategory : (adminData) => {
 } ,
 
 deleteSubCategory : (subcategoryData) => {
+
+    console.log(subcategoryData , "dddddddddddddddddddddddddddddddddd");
     return new Promise (async (resolve , reject) => {
 
-        await db.get().collection(collection.ADMIN_SUB_CATEGORY_COLLECTION).deleteOne({book_sub_category : subcategoryData.book_sub_category})
-
-            return resolve ( {status : true , errorMessage : "Your sub category deleted successfully "} )
-        
-    
+        await db.get().collection(collection.ADMIN_CATEGORY_COLLECTION).updateOne({ category : subcategoryData.book_category} ,
+        {$pull : {
+           
+                book_sub_category : subcategoryData.book_sub_category
+                
+            }
+        }
+    )
+    return resolve ( {status : true , errorMessage : "Your sub category deleted successfully "} )
     })
 } ,
+
+// deleteSubCategory : (subcategoryData) => {
+//     return new Promise (async (resolve , reject) => {
+
+//         await db.get().collection(collection.ADMIN_SUB_CATEGORY_COLLECTION).deleteOne({book_sub_category : subcategoryData.book_sub_category})
+
+//             return resolve ( {status : true , errorMessage : "Your sub category deleted successfully "} )
+        
+    
+//     })
+// } ,
 
 adminAddProduct : (productData) => {
     return new Promise (async (resolve , reject) => {
@@ -124,14 +164,17 @@ getAllProduct : () => {
     return new Promise (async (resolve , reject) => {
 
         const book = await db.get().collection(collection.ADMIN_BOOK_COLLECTION).find().toArray()
+        if (book) {    
             return resolve ({status : true , book})
+        }
+        else {
+            resolve ()
+        }
         })
 } ,
 
 deleteProduct : (bookid) => {
     return new Promise (async (resolve , reject) => {
-        console.log(objectId(bookid));
-
         db.get().collection(collection.ADMIN_BOOK_COLLECTION).deleteOne({_id:objectId(bookid)}).then((response) => {
             resolve({status : true , response})
         })
@@ -140,18 +183,19 @@ deleteProduct : (bookid) => {
 
 viewProduct : (bookid) => {
     return new Promise (async (resolve , reject) => {
-        console.log(objectId(bookid));
-
         const book = await db.get().collection(collection.ADMIN_BOOK_COLLECTION).findOne({_id:objectId(bookid)} )
+        if (book) {
             resolve({status : true , book})
+        }
+        else {
+            resolve ()
+        }
         })
        
 } ,
 
 editProduct : (bookid , bookdata) => {
     return new Promise (async (resolve , reject) => {
-        console.log(objectId(bookid));
-
         await db.get().collection(collection.ADMIN_BOOK_COLLECTION).updateOne({_id:objectId(bookid)} , {
             $set: {
                 book_name : bookdata.book_name ,
@@ -174,7 +218,12 @@ editProduct : (bookid , bookdata) => {
 findOneProduct : (id) => {
     return new Promise (async (resolve , reject) => {
         const oneBook = await db.get().collection(collection.ADMIN_BOOK_COLLECTION).findOne({_id : ObjectId(id)})
-        resolve({status : true , oneBook})
+        if (oneBook) {
+            resolve({status : true , oneBook})
+        }
+        else {
+            resolve ()
+        }
     })
 } ,
 
@@ -272,8 +321,12 @@ getCartItem : (userId) => {
                 }
         ]).toArray()
         
-       
-        resolve(cartItems)
+       if (cartItems) {
+           resolve(cartItems)
+       }
+       else {
+           resolve ()
+       }
     }) 
 } ,
 
@@ -301,13 +354,19 @@ getWishItem : (userId) => {
                 }
         ]).toArray()
         
-       
-        resolve(wishItems)
+       if (wishItems) {
+           resolve(wishItems)
+       }
+       else {
+           resolve()
+       }
     }) 
 } ,
 
 getWishlistCount : (userId) => {
     return new Promise( async(resolve , reject) => {
+
+        let countt
 
         const cart = await db.get().collection(collection.WISHLIST_COLLECTION).findOne({user : objectId(userId)})
 
@@ -342,6 +401,8 @@ deleteWishlist : (productId,userId) => {
 
 getCartCount : (userId) => {
     return new Promise( async(resolve , reject) => {
+
+        let countt
 
         const cart = await db.get().collection(collection.CART_COLLECTION).findOne({user : objectId(userId)})
 
@@ -387,9 +448,19 @@ findDeliveryRate: () => {
     return new Promise (async (resolve , reject) => {
 
     let shipping = await db.get().collection(collection.ADD_DELIVERY_RATE).findOne({})
+
+    if (shipping) {
         let rate = parseInt(shipping.shipping_rate)
-            resolve (  rate  )
-        
+        if (rate) {
+            resolve (  rate  )    
+        } 
+        else {
+            resolve ()
+        }
+    }
+    else {
+        resolve ()
+    } 
     
     })
 },
@@ -397,12 +468,9 @@ findDeliveryRate: () => {
 deleteDeliveryRate : (adminData) => {
     return new Promise (async (resolve , reject) => {
 
-        await db.get().collection(collection.ADD_DELIVERY_RATE).deleteOne({shipping_rate : adminData.shipping_rate}).then (async (data) => {
-            if (adminData.shipping_rate =="") {
-                await db.get().collection(collection.ADD_DELIVERY_RATE).insertOne({shipping_rate : 100})
-            }
-            return resolve ({status : true , successMessage : "Your Shipping Charge Deleted Successfully"})
-        })
+        await db.get().collection(collection.ADD_DELIVERY_RATE).deleteOne({shipping_rate : adminData.shipping_rate})
+
+                return resolve ({status : true , successMessage : "Your Shipping Charge Deleted Successfully"})
     
     })
 },
@@ -432,7 +500,12 @@ findFirstBanner : (adminData) => {
     return new Promise (async (resolve , reject) => {
 
         const firstBanner = await db.get().collection(collection.FIRST_BANNER_DATA).find().toArray()
+        if (firstBanner) {
             return resolve ({status : true , firstBanner })
+        }
+        else {
+            resolve ()
+        }
         })
 },
 
@@ -448,7 +521,12 @@ findSecondBanner : (adminData) => {
     return new Promise (async (resolve , reject) => {
 
         const secondBanner = await db.get().collection(collection.SECOND_BANNER_DATA).find().toArray()
+        if (secondBanner) {          
             return resolve ({status : true , secondBanner })
+        }
+        else {
+            resolve ()
+        }
         })
 },
 
@@ -472,7 +550,12 @@ findAuthorBanner : (adminData) => {
     return new Promise (async (resolve , reject) => {
 
         const authorBanner = await db.get().collection(collection.AUTHOR_BANNER_DATA).find().toArray()
+        if (authorBanner) {
             return resolve ({status : true , authorBanner })
+        }
+        else {
+            resolve ()
+        }
         })
 },
 
@@ -496,8 +579,13 @@ findpromotionBanner : (adminData) => {
     return new Promise (async (resolve , reject) => {
 
         const promotionBanner = await db.get().collection(collection.PROMOTION_BANNER_DATA).find().toArray()
-        console.log(promotionBanner[0]._id + " from database id");
+        if (promotionBanner) {
             return resolve ({status : true , promotionBanner })
+        }
+        else {
+            resolve ()
+        }
+
         })
 },
 
@@ -530,7 +618,12 @@ editPromotion : (promotionId , data) => {
 viewPromotion : (promotionId) => {
     return new Promise (async (resolve,reject) => {
         const promotionBanner = await db.get().collection(collection.PROMOTION_BANNER_DATA).findOne({_id : objectId(promotionId)})
-        resolve({status : true , promotionBanner})
+        if (promotionBanner) {
+            resolve({status : true , promotionBanner})
+        }
+        else {
+            resolve ()
+        }
     }) 
 },
 
@@ -546,7 +639,12 @@ findpromotionLast : (adminData) => {
     return new Promise (async (resolve , reject) => {
 
         const lastpromotionBanner = await db.get().collection(collection.LAST_PROMOTION_BANNER_DATA).find().toArray()
+        if (lastpromotionBanner) {
             return resolve ({status : true , lastpromotionBanner })
+        }
+        else {
+            resolve ()
+        }
         })
 },
 
@@ -577,7 +675,12 @@ editLastPromotion : (promotionId , data) => {
 viewLastPromotion : (lastpromotionId) => {
     return new Promise (async (resolve,reject) => {
         const lastpromotionBanner = await db.get().collection(collection.LAST_PROMOTION_BANNER_DATA).findOne({_id : objectId(lastpromotionId)})
-        resolve({status : true , lastpromotionBanner})
+        if (lastpromotionBanner) {
+            resolve({status : true , lastpromotionBanner})
+        }
+        else {
+            resolve ()
+        }
     }) 
 } ,
 
@@ -585,7 +688,12 @@ findCouponBanner : (adminData) => {
     return new Promise (async (resolve , reject) => {
 
         const couponBanner = await db.get().collection(collection.COUPON_BANNER_DATA).find().toArray()
+        if (couponBanner) {
             return resolve ({status : true , couponBanner })
+        }
+        else {
+            resolve ()
+        }
         })
 },
 
@@ -704,9 +812,6 @@ editAddress : (  userId , data ) => {
 
 
 getOneAddress: (addressId, userId) => {
-
-    console.log(addressId , userId , "from db Ids");
-
     return new Promise(async (resolve, reject) => {
         let address = await db.get().collection(collection.USER_ADDRESS_DATA).aggregate([
             {
@@ -724,10 +829,13 @@ getOneAddress: (addressId, userId) => {
         ]
         ).toArray()
 
-        console.log(address , "from database address");
-
-        let result = address[0].addresses
-        resolve(result)
+        if (address) {
+            let result = address[0].addresses
+            resolve(result)
+        }
+        else {
+            resolve ()
+        }
 
     })
 
@@ -737,10 +845,7 @@ getOneAddress: (addressId, userId) => {
 
 changePaymentStatusByUser : (userId , id) => {
     return new Promise( async (resolve,reject) => {
-        orderCancel = await db.get().collection(collection.ORDER_COLLECTION)
-        
-        
-       
+        await db.get().collection(collection.ORDER_COLLECTION)
         .updateOne({_id : objectId(id)} ,
         {$set : {
             status : "Cancelled" ,
@@ -768,8 +873,14 @@ getCheckoutAddress : ( userId,addressId) => {
                 }
             }
         ]).toArray()
-        let address = oneAddress[0].addresses
-        resolve(address)
+
+        if (oneAddress) {
+            let address = oneAddress[0].addresses
+            resolve(address)
+        }
+        else {
+            resolve ()
+        }
 
     })
 },
@@ -789,7 +900,13 @@ userOrderDetails : (userId) => {
          
     ]).toArray()
     
+    if (order) {
         resolve(order)
+    }
+    else {
+        resolve ()
+    }
+        
     })
 } ,
 
@@ -811,7 +928,6 @@ updateUserData : (UserId , userData) => {
 
 generateRazorpay : (orderId , totalRate) => {
     return new Promise (async (resolve,reject) => {
-
 
         instance.orders.create({
             amount: totalRate * 100,
@@ -836,7 +952,6 @@ generateRazorpay : (orderId , totalRate) => {
 
 
 verifyPayment : (data) => {
-    console.log(data , " data from verify payment");
     return new Promise( (resolve,reject)=> {
 
         let crypto = require("crypto");
@@ -850,7 +965,6 @@ verifyPayment : (data) => {
             resolve()
         }
         else {
-            console.log("payment rejected");
             reject()
         }
 
@@ -894,8 +1008,13 @@ adminDP : (admindp) => {
 findDP : () => {
 
     return new Promise ( async (resolve,reject) => {
-        dpData = await db.get().collection(collection.ADMIN_DP_COLLECTION).find().toArray()
-        resolve(dpData)
+        const dpData = await db.get().collection(collection.ADMIN_DP_COLLECTION).find().toArray()
+        if (dpData) {
+            resolve(dpData)
+        }
+        else {
+           resolve () 
+        }
     })
 },
 
@@ -909,7 +1028,12 @@ addSubscriptionPlans : (data) => {
 findPlans : () =>{
     return new Promise (async (resolve,reject) =>{
         const subscription = db.get().collection(collection.SUBSCRIPTION_PLANS).find().toArray()
-        resolve(subscription)
+        if (subscription) {
+            resolve(subscription)
+        }
+        else {
+            resolve ()
+        }
     })
 },
 
@@ -931,7 +1055,12 @@ findOnePlanForCheckout : (data) =>{
             ]
         }
         )
-        resolve(subscription_rate)
+        if (subscription_rate) {
+            resolve(subscription_rate)
+        }
+        else {
+            resolve()
+        }
     })
 },
 
@@ -940,8 +1069,12 @@ findOnePlanForCheckout : (data) =>{
 getUser : (UserId) => {
     return new Promise ( async(resolve,reject) => {
         const user = await db.get().collection(collection.USER_COLLECTION).findOne({_id : objectId(UserId)})
-
-        resolve(user)
+        if (user) {
+            resolve(user)
+        }
+        else {
+            resolve()
+        }
     })
 },
 
@@ -993,11 +1126,15 @@ checkOut_subscription : (userId , data  , rate , plan , validity , state) => {
     return new Promise ( async (resolve,reject) => {
         
         let Oneplan = await db.get().collection(collection.SUBSCRIPTION_PLANS).findOne({ planTitle : plan})
+
+        if (Oneplan) {
         let maxCountBooks = Oneplan.bookCount
 
 
         await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
         .createIndex( { "endingAt": 1 }, { expireAfterSeconds: 0 } )
+
+       
 
         let receiptObj = {
             userId : objectId(userId) ,
@@ -1017,6 +1154,10 @@ checkOut_subscription : (userId , data  , rate , plan , validity , state) => {
             const id = response.insertedId
             resolve(id)
         }) 
+    }
+    else {
+        resolve()
+    }
 
         
     
@@ -1063,7 +1204,6 @@ verifyPaymentSubscription : (data) => {
             resolve()
         }
         else {
-            console.log("payment rejected");
             reject()
         }
 
@@ -1075,11 +1215,11 @@ verifyPaymentSubscription : (data) => {
 changePaymentStatusForSubscription : (orderId , id) => {
     return new Promise( async(resolve,reject) => {
 
-    
         const paid_plan = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
         .find({ userId : objectId(id) }).toArray()
 
-
+        
+        if (paid_plan) {
         console.log(paid_plan[paid_plan.length-2] , "from database");
 
         const final_paid_plan = paid_plan[paid_plan.length-2]
@@ -1137,15 +1277,6 @@ changePaymentStatusForSubscription : (orderId , id) => {
         await db.get().collection(collection.TOTAL_SUBSCRIPTION_PAID_COLLECTION)
         .insertOne(subscription) 
 
-        // await db.get().collection(collection.TOTAL_SUBSCRIPTION_PAID_COLLECTION)
-        // .updateOne({_id : objectId(orderId) , userId : objectId(id) } ,
-        // {
-        //     $unset : {
-        //         endingAt
-        //     }
-        // }) 
-
-
         resolve()
             }
 
@@ -1172,7 +1303,6 @@ changePaymentStatusForSubscription : (orderId , id) => {
         .findOne({_id : objectId(orderId) , userId : objectId(id)})
         .then(async (response) => {
 
-            // console.log(response , "response from databse line number 1176");
             
             if (response.validity == "month") {
                 let future = new Date(removeDate);
@@ -1232,6 +1362,10 @@ changePaymentStatusForSubscription : (orderId , id) => {
 
         }) 
     }
+}
+else {
+    resolve()
+}
  
         
     })
@@ -1239,7 +1373,6 @@ changePaymentStatusForSubscription : (orderId , id) => {
 
 addCoupon : (Data) => {
     return new Promise (async (resolve,reject) => {
-        console.log(Data.validity , "from db");
         await db.get().collection(collection.COUPON_COLLECTION)
         .createIndex( { "validity": 1 }, { expireAfterSeconds: 0 } )
          
@@ -1263,7 +1396,12 @@ findCoupon : () => {
 
     return new Promise ( async (resolve,reject) => {
         findCoupon = await db.get().collection(collection.COUPON_COLLECTION).find().toArray()
-        resolve(findCoupon)
+        if (findCoupon) {
+            resolve(findCoupon)
+        }
+        else {
+            resolve()
+        }
     })
 } , 
 
@@ -1272,7 +1410,13 @@ findOnePlan : (id) => {
     return new Promise ( async (resolve,reject) => {
         const findOnePlan = await db.get().collection(collection.SUBSCRIPTION_PLANS)
         .findOne({_id : objectId(id)})
-        resolve(findOnePlan)
+        if (findOnePlan) {
+            resolve(findOnePlan)
+        }
+        else {
+            resolve()
+        }
+        
     })
 } ,
 
@@ -1287,8 +1431,9 @@ deleteOneCoupon : (id) => {
 
 findCouponUsingCode : (data) => {
     
+
     return new Promise ( async (resolve,reject) => {
-        const coupon = await db.get().collection(collection.COUPON_COLLECTION).findOne({$text:{$search: data}})
+        const coupon = await db.get().collection(collection.COUPON_COLLECTION).findOne({coupon_code : data})
         if (coupon) {
             resolve({coupon: coupon,status : true})
         }
@@ -1337,7 +1482,13 @@ viewProductUsingRegex : (content) => {
             
     ]).toArray()
 
-    resolve(book)
+    if (book) {
+        resolve(book)
+    }
+    else {
+        resolve()
+    }
+    
         
     })
        
@@ -1346,8 +1497,13 @@ viewProductUsingRegex : (content) => {
 getAllUsers : () => {
     return new Promise ( async(resolve,reject) => {
         const user = await db.get().collection(collection.USER_COLLECTION).find().toArray()
-
-        resolve(user)
+        if (user) {
+            resolve(user)
+        }
+        else {
+            resolve()
+        }
+        
     })
 },
 
@@ -1452,8 +1608,13 @@ findAllOrderDetails : () => {
   
     return new Promise (async (resolve , reject) => {
         const order = await db.get().collection(collection.ORDER_COLLECTION).find().toArray()
-    
-        resolve(order)
+        if (order) {
+            resolve(order)
+        }  
+        else {
+            resolve()
+        }
+        
     })
 } ,
 
@@ -1546,7 +1707,13 @@ deliveredOrdrByAdmin : async (userId , orderId) => {
 findAllPlans : () => {
     return new Promise (async (resolve , response) => {
         const plans = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION).find().toArray()
+        if (plans) {
             resolve(plans)
+        }
+        else {
+            resolve()
+        }
+            
         }) 
 } ,
 
@@ -1569,8 +1736,14 @@ findTotalAmountAndCount : () => {
                 }
             } 
         ]).toArray()
-        
+
+        if (countt) {
             resolve(countt)
+        }
+        else {
+            resolve()
+        }
+     
         }) 
 } ,
 
@@ -1595,8 +1768,14 @@ getdatesalesreport:(start,end)=>{
             {
                 $sort:{date:-1}
             }             
-        ]).toArray()   
-        resolve(report)
+        ]).toArray() 
+        
+        if (report) {
+            resolve(report)
+        }
+        else {
+            resolve()
+        }
     })
 },
 
@@ -1611,17 +1790,31 @@ getdatestockesreport : (start,end) => {
                 $sort:{date:-1}
             }             
         ]).toArray()   
-        resolve(book)
+
+        if (book) {
+            resolve(book)
+        }
+        else {
+            resolve()
+        }
+
     })
 },
 
 
 findFirstUserPlans : (userId) => {
-
+    
+    let nill_plan = "no plan activated"
     return new Promise (async (resolve , response) => {
         const specified_plan = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
         .findOne({ userId : objectId(userId) })
+        if (specified_plan) {
             resolve(specified_plan)
+        }
+        else {
+            resolve(nill_plan)
+        }
+            
         }) 
 } ,
 
@@ -1629,7 +1822,12 @@ findUserPlans : (userId) => {
     return new Promise (async (resolve , response) => {
         const specified_plan = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
         .find({ userId : objectId(userId) }).toArray()
+        if (specified_plan) {
             resolve(specified_plan)
+        }
+        else {
+            resolve()
+        }
         }) 
 } ,
 
@@ -1638,8 +1836,14 @@ rentedCountFromOrder : (id) => {
     return new Promise (async (resolve , reject) => {
         const order = await db.get().collection(collection.ORDER_COLLECTION)
         .find({ userOriginalId : objectId(id)}).toArray()
-    
-        resolve(order)
+
+        if (order) {
+            resolve(order)
+        }
+        else {
+            resolve()
+        }
+
     })
 } ,
 
@@ -1657,8 +1861,13 @@ alluserOrderDetails : () => {
          
          
     ]).toArray()
-  
-           resolve(order)
+
+    if (order) {
+        resolve(order)
+    }
+    else {
+        resolve()
+    }
     })
 } ,
 
@@ -1670,6 +1879,8 @@ returnOrdrByUser : async ( booId , useId ) => {
 
     let paidPlan = await db.get().collection(collection.SUBSCRIPTION_PAID_COLLECTION)
     .findOne({ userId : objectId(useId)})
+
+    if (paidPlan) {
 
     const planEndDate = paidPlan.endingAt 
 
@@ -1684,11 +1895,18 @@ returnOrdrByUser : async ( booId , useId ) => {
 
   
     await db.get().collection(collection.RETURN_BOOK).insertOne(obj) 
+            
+}
+else {
+    resolve ()
+}
 
     
     await db.get().collection(collection.ORDER_COLLECTION)
     .findOne({ userOriginalId : objectId(useId)})
     .then (async (response) => {
+
+        if (response) {
         let responseArray = response.book
         bookArray = responseArray.map( (elem) => {
             if (elem._id == booId){
@@ -1704,6 +1922,7 @@ returnOrdrByUser : async ( booId , useId ) => {
                 book : bookArray
             }
         });
+    
        
 
     
@@ -1723,7 +1942,13 @@ returnOrdrByUser : async ( booId , useId ) => {
  
 
     resolve({order , book});
-})         
+        }
+        else {
+            resolve()
+        }
+})   
+    
+
     
 })  
 
@@ -1753,14 +1978,24 @@ findReturnBook : (bookId) => {
         let returnBook = await db.get().collection(collection.RETURN_BOOK)
         .find( {userId : objectId(bookId) , status : "Return"}).toArray()
 
-        resolve(returnBook)
+        if (returnBook) {
+            resolve(returnBook)
+        }
+        else {
+            resolve()
+        }
     })
 } ,
 
 findAllReturnBook : () => {
     return new Promise ( async (resolve , reject) => {
         let returnBook = await db.get().collection(collection.RETURN_BOOK).find().toArray()
-        resolve(returnBook)
+        if (returnBook) {
+            resolve(returnBook)
+        }
+        else {
+            resolve()
+        }
     })
 } ,
 
@@ -1768,7 +2003,13 @@ findMatchedReturnBook : (id) => {
     return new Promise ( async (resolve , reject) => {
         let returnBook = await db.get().collection(collection.RETURN_BOOK)
         .find({userId : objectId(id)}).toArray()
-        resolve(returnBook)
+        if (returnBook) {
+            resolve(returnBook)
+        }
+        else {
+            resolve()
+        }
+        
     })
 } ,
 
@@ -1795,11 +2036,20 @@ deleteReturnBookFromOrder : (userId , bookId) => {
     let order = await db.get().collection(collection.ORDER_COLLECTION)
     .findOne({ userOriginalId : objectId(userId) })
 
+    if (order) {
+
     if ( !order.book[0]) {
         await db.get().collection(collection.ORDER_COLLECTION)
     .deleteOne({ userOriginalId : objectId(userId) })
-    }
     resolve()
+    }
+    else {
+        resolve()
+    }
+}
+else {
+    resolve()
+}
     })
     
 },
@@ -1864,10 +2114,12 @@ updateNonPremiumFineInBook : (fine) => {
 
 reduceRentCoutAfterReturn : (userId , bookId) => {
 
+    console.log(bookId ,"bookId from database");
+
     return new Promise( async (resolve,reject) => {
 
         const order = await db.get().collection(collection.ORDER_COLLECTION)
-        .findOne({ userOriginalId : objectId(userId) , _id : objectId(orderId) , status : "Delivered" })
+        .findOne({ userOriginalId : objectId(userId) , bookId : objectId(bookId) , status : "Delivered" })
 
         if (order) {
 
@@ -1882,6 +2134,9 @@ reduceRentCoutAfterReturn : (userId , bookId) => {
         )
         resolve({successMessage : "Return Conformed Successfully"})
 
+}
+else {
+    resolve()
 }
 
    
@@ -1944,7 +2199,13 @@ findFineAmount : (id) => {
         const fineUser = await db.get().collection(collection.FINE_AMOUNT_USERS).find({
             userId : objectId(id)
         }).toArray()
-        resolve(fineUser)
+
+        if (fineUser) {
+            resolve(fineUser)
+        }
+        else {
+            resolve()
+        }
     })
 } , 
 
@@ -1969,6 +2230,9 @@ findTotalAmountPerMonth : () => {
                             } 
             
         ]).sort({_id:1}).toArray()
+
+        if (countt) {
+
             let obj ={}
             let arr = []
         for(let i =1;i<=12;i++){
@@ -1982,13 +2246,23 @@ findTotalAmountPerMonth : () => {
             arr.push(obj[x])
         }
             resolve(arr)  
+    }
+    else {
+        resolve()
+    }
         }) 
 } ,
 
 findTotalPaidSubscription : () => {
     return new Promise ( async (resolve , reject) => {
         const totalSubscription = await db.get().collection(collection.TOTAL_SUBSCRIPTION_PAID_COLLECTION).find().toArray()
-        resolve(totalSubscription)
+        if(totalSubscription) {
+            resolve(totalSubscription)
+        }
+        else {
+            resolve()
+        }
+        
     })
 } , 
 
@@ -2020,6 +2294,8 @@ userDataUsingState : () => {
             
         ]).sort({count : -1}).toArray()
 
+        if (userState) {
+
         for ( let i = 0; i < userState.length; i++) {
             temp = userState[i]._id
             state.push(temp) 
@@ -2032,55 +2308,18 @@ userDataUsingState : () => {
         if (userState && state && countOfState && sumOfSubscription) {
             resolve({userState , state , countOfState , sumOfSubscription});
         }
+        else {
+            resolve()
+        }
+    }
+    else {
+        resolve()
+    }
         
         
     })
 } ,
  
-// userDataUsingState : () => {
-//     return new Promise ( async (resolve , reject) => {
-//         let state = [] 
-//         let countOfState = [] 
-//         let sumOfSubscription = []
-//         let temp
-
-//         const userState = await db.get().collection(collection.USER_COLLECTION).
-//         aggregate([
-//             {
-//                 $group : 
-//                 {
-//                     _id : "$user_state" ,
-//                     count: { $count: { }
-//                  } ,
-                 
-//                     sum : 
-//                     {
-//                         $sum : "$subscription_amount"
-//                     }
-                
-
-//                 } 
-                
-//             } 
-            
-//         ]).sort({count : -1}).toArray()
-
-//         for ( let i = 0; i < userState.length; i++) {
-//             temp = userState[i]._id
-//             state.push(temp) 
-//             temp = userState[i].count
-//             countOfState.push(temp)
-//             temp = userState[i].sum
-//             sumOfSubscription.push(temp)
-//         }
-
-//         if (userState && state && countOfState && sumOfSubscription) {
-//             resolve({userState , state , countOfState , sumOfSubscription});
-//         }
-        
-        
-//     })
-// } ,
 
 addCouponUser : (userId , coup) => {
     return new Promise ( async (resolve , reject) => {
@@ -2102,7 +2341,6 @@ addCouponUser : (userId , coup) => {
 } ,
 
 findCouponinUser : (userId , couponCod) => {
-    console.log(userId , couponCod , "from database");
     return new Promise ( async (resolve , reject) => {
         const coupon = await db.get().collection(collection.USER_COLLECTION)
         .findOne({ _id : objectId(userId) , coupon : couponCod })
